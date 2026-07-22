@@ -1,0 +1,218 @@
+"use client";
+
+import { PlusIcon, Trash2Icon } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { NativeSelect } from "@/components/ui/native-select";
+import type { JsonSchema } from "@/lib/types";
+
+type RulesValue = Record<string, unknown>;
+
+function baseType(schema: JsonSchema): string {
+  if (Array.isArray(schema.type)) return schema.type.find((t) => t !== "null") ?? "string";
+  return schema.type ?? "string";
+}
+
+function isNullable(schema: JsonSchema): boolean {
+  return Array.isArray(schema.type) && schema.type.includes("null");
+}
+
+export function defaultForSchema(schema: JsonSchema): unknown {
+  if (schema.default !== undefined) return schema.default;
+  switch (baseType(schema)) {
+    case "boolean":
+      return false;
+    case "number":
+      return isNullable(schema) ? null : 0;
+    case "array":
+      return [];
+    case "object": {
+      const obj: RulesValue = {};
+      if (schema.properties) {
+        for (const [key, propSchema] of Object.entries(schema.properties)) obj[key] = defaultForSchema(propSchema);
+      }
+      return obj;
+    }
+    default:
+      return schema.enum ? schema.enum[0] : "";
+  }
+}
+
+export function humanizeKey(key: string): string {
+  return key
+    .replace(/([A-Z])/g, " $1")
+    .replace(/^./, (c) => c.toUpperCase())
+    .replace(/\bId\b/g, "ID")
+    .trim();
+}
+
+function FieldRow({
+  label,
+  required,
+  htmlFor,
+  children,
+}: {
+  label: string;
+  required?: boolean;
+  htmlFor: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="space-y-1.5">
+      <Label htmlFor={htmlFor} className="text-xs">
+        {label}
+        {required ? <span className="text-destructive"> *</span> : null}
+      </Label>
+      {children}
+    </div>
+  );
+}
+
+export function RulesFields({
+  schema,
+  value,
+  onChange,
+  path = "rules",
+}: {
+  schema: JsonSchema;
+  value: RulesValue;
+  onChange: (next: RulesValue) => void;
+  path?: string;
+}) {
+  const properties = schema.properties ?? {};
+  const required = new Set(schema.required ?? []);
+  const setKey = (key: string, next: unknown) => onChange({ ...value, [key]: next });
+
+  return (
+    <div className="space-y-4">
+      {Object.entries(properties).map(([key, propSchema]) => {
+        const type = baseType(propSchema);
+        const id = `${path}.${key}`;
+        const current = value[key];
+
+        if (type === "boolean") {
+          return (
+            <label key={key} htmlFor={id} className="flex cursor-pointer items-center gap-2 text-sm">
+              <input
+                id={id}
+                type="checkbox"
+                className="size-4 accent-primary"
+                checked={Boolean(current)}
+                onChange={(e) => setKey(key, e.target.checked)}
+              />
+              {humanizeKey(key)}
+            </label>
+          );
+        }
+
+        if (type === "string" && propSchema.enum) {
+          return (
+            <FieldRow key={key} label={humanizeKey(key)} required={required.has(key)} htmlFor={id}>
+              <NativeSelect id={id} value={current == null ? "" : String(current)} onChange={(e) => setKey(key, e.target.value)}>
+                <option value="" disabled>
+                  Select…
+                </option>
+                {propSchema.enum.map((opt) => (
+                  <option key={String(opt)} value={String(opt)}>
+                    {String(opt)}
+                  </option>
+                ))}
+              </NativeSelect>
+            </FieldRow>
+          );
+        }
+
+        if (type === "number") {
+          return (
+            <FieldRow key={key} label={humanizeKey(key)} required={required.has(key)} htmlFor={id}>
+              <Input
+                id={id}
+                type="number"
+                inputMode="decimal"
+                value={current == null ? "" : String(current)}
+                onChange={(e) =>
+                  setKey(key, e.target.value === "" ? (isNullable(propSchema) ? null : "") : Number(e.target.value))
+                }
+              />
+            </FieldRow>
+          );
+        }
+
+        if (type === "object") {
+          const nested = current && typeof current === "object" && !Array.isArray(current) ? (current as RulesValue) : {};
+          return (
+            <fieldset key={key} className="space-y-3 rounded-lg border p-3">
+              <legend className="px-1 text-xs font-medium text-muted-foreground">{humanizeKey(key)}</legend>
+              <RulesFields schema={propSchema} value={nested} onChange={(nv) => setKey(key, nv)} path={id} />
+            </fieldset>
+          );
+        }
+
+        if (type === "array") {
+          const arr = Array.isArray(current) ? (current as RulesValue[]) : [];
+          const itemSchema: JsonSchema = propSchema.items ?? { type: "object", properties: {} };
+          return (
+            <div key={key} className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label className="text-xs">
+                  {humanizeKey(key)}
+                  {required.has(key) ? <span className="text-destructive"> *</span> : null}
+                </Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setKey(key, [...arr, defaultForSchema(itemSchema) as RulesValue])}
+                >
+                  <PlusIcon className="size-3.5" />
+                  Add
+                </Button>
+              </div>
+              {arr.length === 0 ? <p className="text-xs text-muted-foreground">No entries yet.</p> : null}
+              <div className="space-y-2">
+                {arr.map((item, index) => (
+                  <div key={index} className="rounded-lg border p-3">
+                    <div className="mb-2 flex items-center justify-between">
+                      <span className="text-xs font-medium text-muted-foreground">#{index + 1}</span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon-sm"
+                        aria-label="Remove entry"
+                        onClick={() => setKey(key, arr.filter((_, i) => i !== index))}
+                      >
+                        <Trash2Icon className="size-3.5" />
+                      </Button>
+                    </div>
+                    <RulesFields
+                      schema={itemSchema}
+                      value={item && typeof item === "object" ? item : {}}
+                      onChange={(nv) => {
+                        const copy = [...arr];
+                        copy[index] = nv;
+                        setKey(key, copy);
+                      }}
+                      path={`${id}.${index}`}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        }
+
+        return (
+          <FieldRow key={key} label={humanizeKey(key)} required={required.has(key)} htmlFor={id}>
+            <Input
+              id={id}
+              value={current == null ? "" : String(current)}
+              placeholder={propSchema.pattern ? "HH:MM" : undefined}
+              onChange={(e) => setKey(key, e.target.value)}
+            />
+          </FieldRow>
+        );
+      })}
+    </div>
+  );
+}
