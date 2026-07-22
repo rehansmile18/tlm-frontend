@@ -47,6 +47,58 @@ export function humanizeKey(key: string): string {
     .trim();
 }
 
+/**
+ * Normalizes a rules payload before submit: empty/blank number fields become null so the backend
+ * doesn't receive "" (which fails Mongoose number casting). Recurses into nested objects and arrays.
+ */
+export function sanitizeRules(schema: JsonSchema, value: unknown): RulesValue {
+  const properties = schema.properties ?? {};
+  const source = value && typeof value === "object" && !Array.isArray(value) ? (value as RulesValue) : {};
+  const out: RulesValue = { ...source };
+  for (const [key, propSchema] of Object.entries(properties)) {
+    const type = baseType(propSchema);
+    const current = out[key];
+    if (type === "number") {
+      if (current === "" || current === undefined) out[key] = null;
+    } else if (type === "object" && current && typeof current === "object") {
+      out[key] = sanitizeRules(propSchema, current);
+    } else if (type === "array" && Array.isArray(current) && propSchema.items) {
+      out[key] = current.map((item) => sanitizeRules(propSchema.items as JsonSchema, item));
+    }
+  }
+  return out;
+}
+
+/** Returns human-readable labels for required rule fields that are missing/blank. Empty = valid. */
+export function collectRuleErrors(schema: JsonSchema, value: unknown, prefix = ""): string[] {
+  const errors: string[] = [];
+  const properties = schema.properties ?? {};
+  const required = new Set(schema.required ?? []);
+  const obj = value && typeof value === "object" && !Array.isArray(value) ? (value as RulesValue) : {};
+
+  for (const [key, propSchema] of Object.entries(properties)) {
+    const type = baseType(propSchema);
+    const current = obj[key];
+    const isRequired = required.has(key);
+    const label = prefix ? `${prefix} → ${humanizeKey(key)}` : humanizeKey(key);
+
+    if (type === "number") {
+      const missing = current === "" || current === undefined || (current === null && !isNullable(propSchema)) || (typeof current === "number" && Number.isNaN(current));
+      if (isRequired && missing) errors.push(label);
+    } else if (type === "string") {
+      if (isRequired && (current === undefined || current === null || String(current).trim() === "")) errors.push(label);
+    } else if (type === "object") {
+      errors.push(...collectRuleErrors(propSchema, current, label));
+    } else if (type === "array") {
+      if (isRequired && (!Array.isArray(current) || current.length === 0)) errors.push(label);
+      if (Array.isArray(current) && propSchema.items) {
+        current.forEach((item, index) => errors.push(...collectRuleErrors(propSchema.items as JsonSchema, item, `${label} #${index + 1}`)));
+      }
+    }
+  }
+  return errors;
+}
+
 function FieldRow({
   label,
   required,

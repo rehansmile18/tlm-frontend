@@ -17,7 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { NativeSelect } from "@/components/ui/native-select";
-import { RulesFields, defaultForSchema } from "./rules-fields";
+import { RulesFields, collectRuleErrors, defaultForSchema, sanitizeRules } from "./rules-fields";
 import { policiesApi, type CreatePolicyBody, type UpdatePolicyBody } from "@/lib/resources";
 import { useRole } from "@/lib/auth";
 import { humanizeError } from "@/components/data-state";
@@ -50,7 +50,9 @@ function PolicyForm({
   const [clientId, setClientId] = useState<string>(policy?.clientId ?? ownClientId ?? "");
   const [name, setName] = useState(policy?.name ?? "");
   const [description, setDescription] = useState(policy?.description ?? "");
-  const [effectiveFrom, setEffectiveFrom] = useState(toDateInput(policy?.effectiveFrom) || toDateInput(new Date().toISOString()));
+  // A new version (edit) must take effect strictly after the current one, so default to today
+  // rather than echoing the existing effective date (which the backend would reject as backdated).
+  const [effectiveFrom, setEffectiveFrom] = useState(toDateInput(new Date().toISOString()));
   const [stateCode, setStateCode] = useState(policy?.jurisdiction?.state ?? "");
   const [rules, setRules] = useState<RulesValue>(
     () => policy?.rules ?? (defaultForSchema(schemaFor(policyTypes, policy?.policyType ?? "OVERTIME")) as RulesValue)
@@ -58,13 +60,14 @@ function PolicyForm({
 
   const mutation = useMutation({
     mutationFn: async () => {
+      const cleanRules = sanitizeRules(schemaFor(policyTypes, policyType), rules);
       if (isEdit && policy) {
         const body: UpdatePolicyBody = {
           name,
           description: description || undefined,
           effectiveFrom,
           jurisdiction: { country: "US", state: stateCode || null },
-          rules,
+          rules: cleanRules,
         };
         return policiesApi.update(policy.policyId, body);
       }
@@ -76,7 +79,7 @@ function PolicyForm({
         name,
         description: description || undefined,
         effectiveFrom,
-        rules,
+        rules: cleanRules,
       };
       return policiesApi.create(body);
     },
@@ -90,15 +93,19 @@ function PolicyForm({
     onError: (error) => toast.error(isEdit ? "Couldn't save version" : "Couldn't create policy", { description: humanizeError(error) }),
   });
 
+  const activeSchema = schemaFor(policyTypes, policyType);
+
   function submit(event: React.FormEvent) {
     event.preventDefault();
     if (!name.trim()) return toast.error("Name is required");
     if (!effectiveFrom) return toast.error("Effective-from date is required");
     if (scope === "client" && !clientId) return toast.error("Select a client");
+    const ruleErrors = collectRuleErrors(activeSchema, sanitizeRules(activeSchema, rules));
+    if (ruleErrors.length > 0) {
+      return toast.error("Missing required rule fields", { description: ruleErrors.slice(0, 4).join(", ") });
+    }
     mutation.mutate();
   }
-
-  const activeSchema = schemaFor(policyTypes, policyType);
 
   return (
     <form onSubmit={submit} className="space-y-4">
@@ -170,6 +177,7 @@ function PolicyForm({
           <div className="space-y-1.5">
             <Label htmlFor="effectiveFrom">Effective from</Label>
             <Input id="effectiveFrom" type="date" value={effectiveFrom} onChange={(e) => setEffectiveFrom(e.target.value)} />
+            {isEdit ? <p className="text-xs text-muted-foreground">Must be after the current version&apos;s date.</p> : null}
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="state">Jurisdiction (state)</Label>

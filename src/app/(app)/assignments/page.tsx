@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { PlusIcon, ShieldCheckIcon } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
@@ -18,6 +19,7 @@ import { useRole } from "@/lib/auth";
 import { assignmentStatusTone, formatDate } from "@/lib/format";
 
 export default function AssignmentsPage() {
+  const router = useRouter();
   const { canWrite } = useRole();
   const [dialogOpen, setDialogOpen] = useState(false);
 
@@ -90,11 +92,9 @@ export default function AssignmentsPage() {
               </TableHeader>
               <TableBody>
                 {items.map((a) => (
-                  <TableRow key={a._id}>
+                  <TableRow key={a._id} className="cursor-pointer" onClick={() => router.push(`/assignments/${a._id}`)}>
                     <TableCell className="font-medium">
-                      <Link href={`/rule-groups/${a.ruleGroupId}`} className="hover:underline">
-                        {nameById.get(a.ruleGroupId) ?? <span className="font-mono text-xs">{a.ruleGroupId.slice(0, 8)}…</span>}
-                      </Link>
+                      {nameById.get(a.ruleGroupId) ?? <span className="font-mono text-xs">{a.ruleGroupId.slice(0, 8)}…</span>}
                     </TableCell>
                     <TableCell className="capitalize text-muted-foreground">{a.targetType.toLowerCase()}</TableCell>
                     <TableCell className="max-w-64 truncate text-muted-foreground">{a.targetIds.join(", ")}</TableCell>

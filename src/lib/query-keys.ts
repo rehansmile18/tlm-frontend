@@ -7,6 +7,7 @@ export const queryKeys = {
   ruleGroups: (params?: unknown) => ["rule-groups", params ?? {}] as const,
   ruleGroup: (id: string) => ["rule-group", id] as const,
   assignments: (params?: unknown) => ["assignments", params ?? {}] as const,
+  assignment: (id: string) => ["assignment", id] as const,
   clients: ["clients"] as const,
   users: (params?: unknown) => ["users", params ?? {}] as const,
   auditLogs: (params?: unknown) => ["audit-logs", params ?? {}] as const,
