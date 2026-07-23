@@ -11,6 +11,7 @@ import {
   type ReactNode,
 } from "react";
 import { useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import { authApi } from "./resources";
 import {
   clearSession,
@@ -33,6 +34,7 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   // Session lives in localStorage; subscribe to it as an external store so reads are consistent
   // across tabs and hydration-safe (server snapshot is always null).
@@ -53,8 +55,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(() => {
     clearSession();
-    router.replace("/login");
-  }, [router]);
+    // Drop every cached query so no previous session's data (policies, rule groups, users, …)
+    // can flash or linger into whichever session logs in next.
+    queryClient.clear();
+    // A hard redirect, not router.replace: it guarantees a full reset (no reliance on every
+    // consumer correctly reacting to the store change) and can't be raced by in-flight requests
+    // or lingering component state from the authenticated app shell.
+    if (typeof window !== "undefined") {
+      window.location.href = "/login";
+    } else {
+      router.replace("/login");
+    }
+  }, [queryClient, router]);
 
   const value = useMemo<AuthContextValue>(
     () => ({ user, isAuthenticated: Boolean(user), isReady: mounted, login, logout }),
