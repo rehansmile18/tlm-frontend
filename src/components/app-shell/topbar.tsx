@@ -7,6 +7,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -61,10 +62,12 @@ export function Topbar() {
             </span>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-60">
-            <DropdownMenuLabel className="flex flex-col gap-0.5">
-              <span className="text-sm font-medium text-foreground">{user.email}</span>
-              <span className="text-xs font-normal text-muted-foreground">{humanizeRole(user.role)}</span>
-            </DropdownMenuLabel>
+            <DropdownMenuGroup>
+              <DropdownMenuLabel className="flex flex-col gap-0.5">
+                <span className="text-sm font-medium text-foreground">{user.email}</span>
+                <span className="text-xs font-normal text-muted-foreground">{humanizeRole(user.role)}</span>
+              </DropdownMenuLabel>
+            </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem variant="destructive" onClick={logout}>
               <LogOutIcon className="size-4" />

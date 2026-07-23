@@ -48,7 +48,7 @@ export default function AssignmentsPage() {
         description="Bindings of rule groups to employee, paygroup, location, department, or state populations."
         actions={
           <div className="flex gap-2">
-            <Button variant="outline" render={<Link href="/resolve" />}>
+            <Button variant="outline" nativeButton={false} render={<Link href="/resolve" />}>
               <ShieldCheckIcon className="size-4" />
               Resolve
             </Button>

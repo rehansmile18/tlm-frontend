@@ -84,7 +84,7 @@ export default function DashboardPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Button render={<Link href="/resolve" />}>
+            <Button nativeButton={false} render={<Link href="/resolve" />}>
               Open resolver
               <ArrowRightIcon className="size-4" />
             </Button>
@@ -103,7 +103,7 @@ export default function DashboardPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Button variant="outline" render={<Link href="/policies" />}>
+            <Button variant="outline" nativeButton={false} render={<Link href="/policies" />}>
               Go to policies
               <ArrowRightIcon className="size-4" />
             </Button>
