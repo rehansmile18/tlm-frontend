@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { LogOutIcon, MenuIcon } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { LogOutIcon, MenuIcon, UserIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import {
@@ -14,19 +15,19 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/lib/auth";
+import { useMyProfile } from "@/lib/hooks";
 import { useTranslation } from "@/lib/i18n/i18n";
+import { initialsFromEmail } from "@/lib/avatar";
+import { UserAvatar } from "@/components/user-avatar";
 import { Brand, SidebarNav } from "./sidebar";
 import { ThemeToggle } from "./theme-toggle";
 import { LanguageSwitcher } from "./language-switcher";
 
-function initials(email: string): string {
-  const name = email.split("@")[0] ?? email;
-  return name.slice(0, 2).toUpperCase();
-}
-
 export function Topbar() {
   const { user, logout } = useAuth();
+  const { data: profile } = useMyProfile();
   const { t, dir } = useTranslation();
+  const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
   const roleLabel = user ? t(`roles.${user.role}`) : "";
   // The mobile nav drawer should slide in from the reading-start edge — right in RTL, left in LTR.
@@ -59,9 +60,7 @@ export function Topbar() {
       {user ? (
         <DropdownMenu>
           <DropdownMenuTrigger render={<Button variant="ghost" size="sm" className="h-auto gap-2 py-1.5" />}>
-            <span className="flex size-7 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
-              {initials(user.email)}
-            </span>
+            <UserAvatar avatarUrl={profile?.avatarUrl} initials={initialsFromEmail(user.email)} />
             <span className="hidden flex-col items-start leading-tight sm:flex">
               <span className="text-sm font-medium">{user.email}</span>
               <span className="text-[11px] text-muted-foreground">{roleLabel}</span>
@@ -74,6 +73,11 @@ export function Topbar() {
                 <span className="text-xs font-normal text-muted-foreground">{roleLabel}</span>
               </DropdownMenuLabel>
             </DropdownMenuGroup>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => router.push("/profile")}>
+              <UserIcon className="size-4" />
+              {t("nav.profile")}
+            </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem variant="destructive" onClick={logout}>
               <LogOutIcon className="size-4" />

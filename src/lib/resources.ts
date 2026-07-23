@@ -16,9 +16,11 @@ import type {
   PolicyStatus,
   PolicyType,
   PolicyTypeSchema,
+  PreferredLanguage,
   ResolveResult,
   RuleGroup,
   RuleGroupStatus,
+  UserProfile,
   UserRecord,
   UserRole,
 } from "./types";
@@ -183,10 +185,25 @@ export interface CreateUserBody {
   clientId?: string;
 }
 
+export interface UpdateProfileBody {
+  preferredLanguage?: PreferredLanguage | null;
+  preferredDateFormat?: CalendarFormat | null;
+}
+
+export interface ChangePasswordBody {
+  currentPassword: string;
+  newPassword: string;
+}
+
 export const usersApi = {
   list: (params: { clientId?: string; page?: number; pageSize?: number } = {}) =>
     apiFetch<Paginated<UserRecord>>("/users", { query: { ...params } }),
   create: (body: CreateUserBody) => apiFetch<UserRecord>("/users", { method: "POST", body }),
+  me: () => apiFetch<UserProfile>("/users/me"),
+  updateMe: (body: UpdateProfileBody) => apiFetch<UserProfile>("/users/me", { method: "PATCH", body }),
+  changePassword: (body: ChangePasswordBody) => apiFetch<void>("/users/me/change-password", { method: "POST", body }),
+  updateAvatar: (avatarUrl: string | null) =>
+    apiFetch<UserProfile>("/users/me/avatar", { method: "PATCH", body: { avatarUrl } }),
 };
 
 // ---- Audit logs ----

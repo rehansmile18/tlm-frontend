@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { clientsApi, geoApi, policiesApi } from "./resources";
+import { clientsApi, geoApi, policiesApi, usersApi } from "./resources";
 import { queryKeys } from "./query-keys";
 import { useAuth, useRole } from "./auth";
 
@@ -36,6 +36,21 @@ export function useMyClient() {
     queryFn: () => clientsApi.getMine(),
     enabled: isAuthenticated,
     staleTime: 5 * 60 * 1000,
+  });
+}
+
+/**
+ * The caller's own full profile, including personal preferences (preferredLanguage,
+ * preferredDateFormat) that aren't part of the login-time AuthUser snapshot once they're changed
+ * mid-session — the profile page and DateFormatProvider both read this as the live source of truth.
+ */
+export function useMyProfile() {
+  const { isAuthenticated } = useAuth();
+  return useQuery({
+    queryKey: queryKeys.myProfile,
+    queryFn: () => usersApi.me(),
+    enabled: isAuthenticated,
+    staleTime: 60 * 1000,
   });
 }
 

@@ -11,6 +11,7 @@ export const queryKeys = {
   clients: ["clients"] as const,
   myClient: ["clients", "me"] as const,
   users: (params?: unknown) => ["users", params ?? {}] as const,
+  myProfile: ["users", "me"] as const,
   auditLogs: (params?: unknown) => ["audit-logs", params ?? {}] as const,
   countries: ["geo", "countries"] as const,
   states: (countryCode: string) => ["geo", "states", countryCode] as const,

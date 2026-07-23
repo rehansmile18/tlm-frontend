@@ -46,16 +46,37 @@ export const TARGET_TYPE_SPECIFICITY: Record<AssignmentTargetType, number> = {
   STATE: 10,
 };
 
+// A user's own display-language preference — distinct from a client's shared calendarFormat.
+// Mirrors src/lib/i18n/i18n.tsx's Locale exactly; kept as a separate literal union (rather than
+// importing Locale here) so lib/types.ts stays a pure mirror of the backend domain model.
+export type PreferredLanguage = "en" | "es" | "ar";
+
 export interface AuthUser {
   userId: string;
   email: string;
   role: UserRole;
   clientId: string | null;
+  preferredLanguage: PreferredLanguage | null;
+  preferredDateFormat: CalendarFormat | null;
 }
 
 export interface LoginResponse {
   token: string;
   user: AuthUser;
+}
+
+export interface UserProfile {
+  _id: string;
+  email: string;
+  role: UserRole;
+  clientId: string | null;
+  status: string;
+  createdAt: string;
+  preferredLanguage: PreferredLanguage | null;
+  preferredDateFormat: CalendarFormat | null;
+  // A base64 image data URL, or null for no photo. Deliberately kept out of AuthUser/login/
+  // localStorage — it can be sizeable, and the profile query is the live source of truth instead.
+  avatarUrl: string | null;
 }
 
 export interface Jurisdiction {

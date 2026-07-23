@@ -1,7 +1,14 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { clearSession, getStoredUser, getUserSnapshot, setSession, subscribeSession } from "../auth-store";
 
-const user = { userId: "u1", email: "a@b.c", role: "CLIENT_ADMIN" as const, clientId: "c1" };
+const user = {
+  userId: "u1",
+  email: "a@b.c",
+  role: "CLIENT_ADMIN" as const,
+  clientId: "c1",
+  preferredLanguage: null,
+  preferredDateFormat: null,
+};
 
 describe("auth-store", () => {
   afterEach(() => {

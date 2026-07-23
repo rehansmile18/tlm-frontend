@@ -20,6 +20,7 @@ import {
   setSession,
   subscribeSession,
 } from "./auth-store";
+import { useTranslation } from "./i18n/i18n";
 import type { AuthUser, UserRole } from "./types";
 
 interface AuthContextValue {
@@ -35,6 +36,7 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { setLocale } = useTranslation();
 
   // Session lives in localStorage; subscribe to it as an external store so reads are consistent
   // across tabs and hydration-safe (server snapshot is always null).
@@ -48,10 +50,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setMounted(true);
   }, []);
 
-  const login = useCallback(async (email: string, password: string) => {
-    const res = await authApi.login(email, password);
-    setSession(res.token, res.user);
-  }, []);
+  const login = useCallback(
+    async (email: string, password: string) => {
+      const res = await authApi.login(email, password);
+      setSession(res.token, res.user);
+      // Honor the account's saved language on sign-in, so it follows the user to a new browser
+      // or device — a mid-session switch via the topbar stays local until they save it here.
+      if (res.user.preferredLanguage) setLocale(res.user.preferredLanguage);
+    },
+    [setLocale]
+  );
 
   const logout = useCallback(() => {
     clearSession();

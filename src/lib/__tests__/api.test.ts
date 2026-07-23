@@ -2,7 +2,14 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { ApiError, apiFetch } from "../api";
 import { getToken, setSession } from "../auth-store";
 
-const demoUser = { userId: "u1", email: "a@b.c", role: "VIEWER" as const, clientId: null };
+const demoUser = {
+  userId: "u1",
+  email: "a@b.c",
+  role: "VIEWER" as const,
+  clientId: null,
+  preferredLanguage: null,
+  preferredDateFormat: null,
+};
 
 describe("apiFetch", () => {
   afterEach(() => {

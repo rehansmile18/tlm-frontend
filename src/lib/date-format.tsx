@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useMemo, type ReactNode } from "react";
-import { useMyClient } from "./hooks";
+import { useMyClient, useMyProfile } from "./hooks";
 import { CALENDAR_FORMAT_PATTERNS, formatDate as formatDateWith, formatDateTime as formatDateTimeWith } from "./format";
 import type { CalendarFormat } from "./types";
 
@@ -16,14 +16,14 @@ interface DateFormatContextValue {
 const DateFormatContext = createContext<DateFormatContextValue | null>(null);
 
 /**
- * Resolves the logged-in user's client's calendarFormat (via GET /clients/me) and makes
- * format-bound formatDate/formatDateTime available to the whole app, so every date renders in
- * the format that client chose — falling back to MM/DD/YYYY before the client loads, or for a
- * PLATFORM_ADMIN, who spans all clients and has no single format.
+ * Resolves the date format to render throughout the app, in priority order: the user's own
+ * preferredDateFormat (set on the profile page) > their client's shared calendarFormat (via GET
+ * /clients/me) > MM/DD/YYYY before either loads, or for a PLATFORM_ADMIN with no single client.
  */
 export function DateFormatProvider({ children }: { children: ReactNode }) {
-  const { data } = useMyClient();
-  const calendarFormat = data?.client?.calendarFormat ?? DEFAULT_FORMAT;
+  const { data: clientData } = useMyClient();
+  const { data: profileData } = useMyProfile();
+  const calendarFormat = profileData?.preferredDateFormat ?? clientData?.client?.calendarFormat ?? DEFAULT_FORMAT;
 
   const value = useMemo<DateFormatContextValue>(() => {
     const pattern = CALENDAR_FORMAT_PATTERNS[calendarFormat];
