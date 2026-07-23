@@ -16,19 +16,20 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { NativeSelect } from "@/components/ui/native-select";
+import { Combobox, ComboboxItem } from "@/components/ui/combobox";
 import { RulesFields, collectRuleErrors, defaultForSchema, sanitizeRules } from "./rules-fields";
 import { policiesApi, type CreatePolicyBody, type UpdatePolicyBody } from "@/lib/resources";
 import { useRole } from "@/lib/auth";
+import { useTranslation } from "@/lib/i18n/i18n";
 import { humanizeError } from "@/components/data-state";
-import { humanizePolicyType, toDateInput, US_STATES } from "@/lib/format";
+import { toDateInput } from "@/lib/format";
 import { POLICY_TYPES, type Policy, type PolicyScope, type PolicyType, type PolicyTypeSchema } from "@/lib/types";
-import { useClients } from "@/lib/hooks";
+import { useClients, useCountries, useStatesForCountry } from "@/lib/hooks";
 
 type RulesValue = Record<string, unknown>;
 
 function schemaFor(policyTypes: PolicyTypeSchema[], type: PolicyType) {
-  return policyTypes.find((t) => t.policyType === type)?.rulesSchema ?? { type: "object", properties: {} };
+  return policyTypes.find((pt) => pt.policyType === type)?.rulesSchema ?? { type: "object", properties: {} };
 }
 
 function PolicyForm({
@@ -42,7 +43,9 @@ function PolicyForm({
 }) {
   const isEdit = Boolean(policy);
   const { isPlatformAdmin, clientId: ownClientId } = useRole();
+  const { t } = useTranslation();
   const clients = useClients();
+  const countries = useCountries();
   const queryClient = useQueryClient();
 
   const [policyType, setPolicyType] = useState<PolicyType>(policy?.policyType ?? "OVERTIME");
@@ -53,10 +56,20 @@ function PolicyForm({
   // A new version (edit) must take effect strictly after the current one, so default to today
   // rather than echoing the existing effective date (which the backend would reject as backdated).
   const [effectiveFrom, setEffectiveFrom] = useState(toDateInput(new Date().toISOString()));
+  const [country, setCountry] = useState(policy?.jurisdiction?.country ?? "US");
   const [stateCode, setStateCode] = useState(policy?.jurisdiction?.state ?? "");
   const [rules, setRules] = useState<RulesValue>(
     () => policy?.rules ?? (defaultForSchema(schemaFor(policyTypes, policy?.policyType ?? "OVERTIME")) as RulesValue)
   );
+
+  const states = useStatesForCountry(country || null);
+  // Switching country invalidates any previously-picked state from the old country (same
+  // adjust-during-render pattern as the client form — avoids an extra render vs. an effect).
+  const [stateResetForCountry, setStateResetForCountry] = useState(country);
+  if (country !== stateResetForCountry) {
+    setStateResetForCountry(country);
+    setStateCode("");
+  }
 
   const mutation = useMutation({
     mutationFn: async () => {
@@ -66,7 +79,7 @@ function PolicyForm({
           name,
           description: description || undefined,
           effectiveFrom,
-          jurisdiction: { country: "US", state: stateCode || null },
+          jurisdiction: { country, state: stateCode || null },
           rules: cleanRules,
         };
         return policiesApi.update(policy.policyId, body);
@@ -75,7 +88,7 @@ function PolicyForm({
         scope,
         clientId: scope === "client" ? clientId : undefined,
         policyType,
-        jurisdiction: { country: "US", state: stateCode || null },
+        jurisdiction: { country, state: stateCode || null },
         name,
         description: description || undefined,
         effectiveFrom,
@@ -84,116 +97,125 @@ function PolicyForm({
       return policiesApi.create(body);
     },
     onSuccess: (saved) => {
-      toast.success(isEdit ? "New version created" : "Policy created");
+      toast.success(isEdit ? t("policies.toastVersionCreated") : t("policies.toastPolicyCreated"));
       queryClient.invalidateQueries({ queryKey: ["policies"] });
       queryClient.invalidateQueries({ queryKey: ["policy", saved.policyId] });
       queryClient.invalidateQueries({ queryKey: ["policy-versions", saved.policyId] });
       onDone();
     },
-    onError: (error) => toast.error(isEdit ? "Couldn't save version" : "Couldn't create policy", { description: humanizeError(error) }),
+    onError: (error) =>
+      toast.error(isEdit ? t("policies.couldntSaveVersion") : t("policies.couldntCreatePolicy"), { description: humanizeError(error) }),
   });
 
   const activeSchema = schemaFor(policyTypes, policyType);
 
   function submit(event: React.FormEvent) {
     event.preventDefault();
-    if (!name.trim()) return toast.error("Name is required");
-    if (!effectiveFrom) return toast.error("Effective-from date is required");
-    if (scope === "client" && !clientId) return toast.error("Select a client");
+    if (!name.trim()) return toast.error(t("common.nameRequired"));
+    if (!effectiveFrom) return toast.error(t("common.effectiveFromRequired"));
+    if (scope === "client" && !clientId) return toast.error(t("common.selectClient"));
     const ruleErrors = collectRuleErrors(activeSchema, sanitizeRules(activeSchema, rules));
     if (ruleErrors.length > 0) {
-      return toast.error("Missing required rule fields", { description: ruleErrors.slice(0, 4).join(", ") });
+      return toast.error(t("common.missingRequiredFields"), { description: ruleErrors.slice(0, 4).join(", ") });
     }
     mutation.mutate();
   }
 
   return (
     <form onSubmit={submit} className="space-y-4">
-      <div className="max-h-[60vh] space-y-4 overflow-y-auto pr-1">
+      <div className="max-h-[60vh] space-y-4 overflow-y-auto pe-1">
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-1.5">
-            <Label htmlFor="policyType">Policy type</Label>
+            <Label htmlFor="policyType">{t("policies.policyType")}</Label>
             {isEdit ? (
-              <Input id="policyType" value={humanizePolicyType(policyType)} disabled />
+              <Input id="policyType" value={t(`policyTypes.${policyType}`)} disabled />
             ) : (
-              <NativeSelect
+              <Combobox
                 id="policyType"
                 value={policyType}
-                onChange={(e) => {
-                  const next = e.target.value as PolicyType;
+                onValueChange={(value) => {
+                  const next = value as PolicyType;
                   setPolicyType(next);
                   setRules(defaultForSchema(schemaFor(policyTypes, next)) as RulesValue);
                 }}
               >
-                {POLICY_TYPES.map((t) => (
-                  <option key={t} value={t}>
-                    {humanizePolicyType(t)}
-                  </option>
+                {POLICY_TYPES.map((pt) => (
+                  <ComboboxItem key={pt} value={pt}>
+                    {t(`policyTypes.${pt}`)}
+                  </ComboboxItem>
                 ))}
-              </NativeSelect>
+              </Combobox>
             )}
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="scope">Scope</Label>
+            <Label htmlFor="scope">{t("policies.scope")}</Label>
             {isEdit || !isPlatformAdmin ? (
-              <Input id="scope" value={scope === "global" ? "Global (statutory)" : "Client-specific"} disabled />
+              <Input id="scope" value={scope === "global" ? t("policies.globalStatutory") : t("policies.clientSpecific")} disabled />
             ) : (
-              <NativeSelect id="scope" value={scope} onChange={(e) => setScope(e.target.value as PolicyScope)}>
-                <option value="global">Global (statutory)</option>
-                <option value="client">Client-specific</option>
-              </NativeSelect>
+              <Combobox id="scope" value={scope} onValueChange={(v) => setScope(v as PolicyScope)}>
+                <ComboboxItem value="global">{t("policies.globalStatutory")}</ComboboxItem>
+                <ComboboxItem value="client">{t("policies.clientSpecific")}</ComboboxItem>
+              </Combobox>
             )}
           </div>
         </div>
 
         {scope === "client" && !isEdit && isPlatformAdmin ? (
           <div className="space-y-1.5">
-            <Label htmlFor="clientId">Client</Label>
-            <NativeSelect id="clientId" value={clientId} onChange={(e) => setClientId(e.target.value)}>
-              <option value="" disabled>
-                Select a client…
-              </option>
+            <Label htmlFor="clientId">{t("clients.title")}</Label>
+            <Combobox id="clientId" value={clientId} onValueChange={setClientId} placeholder={t("policies.selectClient")}>
               {clients.data?.items.map((c) => (
-                <option key={c._id} value={c._id}>
+                <ComboboxItem key={c._id} value={c._id}>
                   {c.name}
-                </option>
+                </ComboboxItem>
               ))}
-            </NativeSelect>
+            </Combobox>
           </div>
         ) : null}
 
         <div className="space-y-1.5">
-          <Label htmlFor="name">Name</Label>
+          <Label htmlFor="name">{t("common.name")}</Label>
           <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Federal FLSA Overtime" />
         </div>
 
         <div className="space-y-1.5">
-          <Label htmlFor="description">Description</Label>
+          <Label htmlFor="description">{t("common.description")}</Label>
           <Textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} rows={2} />
+        </div>
+
+        <div className="space-y-1.5">
+          <Label htmlFor="effectiveFrom">{t("common.effectiveFrom")}</Label>
+          <Input id="effectiveFrom" type="date" value={effectiveFrom} onChange={(e) => setEffectiveFrom(e.target.value)} />
+          {isEdit ? <p className="text-xs text-muted-foreground">{t("policies.mustBeAfterCurrent")}</p> : null}
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-1.5">
-            <Label htmlFor="effectiveFrom">Effective from</Label>
-            <Input id="effectiveFrom" type="date" value={effectiveFrom} onChange={(e) => setEffectiveFrom(e.target.value)} />
-            {isEdit ? <p className="text-xs text-muted-foreground">Must be after the current version&apos;s date.</p> : null}
+            <Label htmlFor="country">{t("clients.country")}</Label>
+            <Combobox id="country" value={country} onValueChange={setCountry}>
+              {countries.data?.items.map((c) => (
+                <ComboboxItem key={c.isoCode} value={c.isoCode}>
+                  {c.name}
+                </ComboboxItem>
+              ))}
+            </Combobox>
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="state">Jurisdiction (state)</Label>
-            <NativeSelect id="state" value={stateCode ?? ""} onChange={(e) => setStateCode(e.target.value)}>
-              <option value="">Federal / not state-specific</option>
-              {US_STATES.map((s) => (
-                <option key={s.code} value={s.code}>
-                  {s.name} ({s.code})
-                </option>
+            <Label htmlFor="state">{t("policies.jurisdiction")}</Label>
+            <Combobox id="state" value={stateCode ?? ""} onValueChange={setStateCode} disabled={states.isLoading}>
+              <ComboboxItem value="">{t("policies.federal")}</ComboboxItem>
+              {(states.data?.items ?? []).map((s) => (
+                <ComboboxItem key={s.isoCode} value={s.isoCode}>
+                  {s.name} ({s.isoCode})
+                </ComboboxItem>
               ))}
-            </NativeSelect>
+            </Combobox>
           </div>
         </div>
 
         <div className="space-y-3 rounded-lg border bg-muted/30 p-3">
-          <p className="text-sm font-medium">Rules</p>
+          <p className="text-sm font-medium">{t("policies.rulesSectionTitle")}</p>
           <RulesFields schema={activeSchema} value={rules} onChange={setRules} />
         </div>
       </div>
@@ -201,7 +223,7 @@ function PolicyForm({
       <DialogFooter>
         <Button type="submit" disabled={mutation.isPending}>
           {mutation.isPending ? <Loader2Icon className="size-4 animate-spin" /> : null}
-          {isEdit ? "Save new version" : "Create policy"}
+          {isEdit ? t("ruleGroups.saveNewVersion") : t("policies.newPolicy")}
         </Button>
       </DialogFooter>
     </form>
@@ -219,16 +241,13 @@ export function PolicyFormDialog({
   policy?: Policy;
   policyTypes: PolicyTypeSchema[];
 }) {
+  const { t } = useTranslation();
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-xl">
         <DialogHeader>
-          <DialogTitle>{policy ? "Edit policy (new version)" : "New policy"}</DialogTitle>
-          <DialogDescription>
-            {policy
-              ? "Editing creates a new immutable version with its own effective date."
-              : "Create a draft policy. Global policies go through maker-checker approval; client policies you can publish directly."}
-          </DialogDescription>
+          <DialogTitle>{policy ? t("policies.editPolicyTitle") : t("policies.newPolicyTitle")}</DialogTitle>
+          <DialogDescription>{policy ? t("policies.editDescription") : t("policies.newDescription")}</DialogDescription>
         </DialogHeader>
         {open ? <PolicyForm key={policy?._id ?? "new"} policy={policy} policyTypes={policyTypes} onDone={() => onOpenChange(false)} /> : null}
       </DialogContent>

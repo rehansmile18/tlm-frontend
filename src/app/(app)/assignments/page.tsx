@@ -16,11 +16,15 @@ import { AssignmentFormDialog } from "@/components/assignments/assignment-form-d
 import { assignmentsApi, ruleGroupsApi } from "@/lib/resources";
 import { queryKeys } from "@/lib/query-keys";
 import { useRole } from "@/lib/auth";
-import { assignmentStatusTone, formatDate } from "@/lib/format";
+import { useDateFormat } from "@/lib/date-format";
+import { useTranslation } from "@/lib/i18n/i18n";
+import { assignmentStatusTone } from "@/lib/format";
 
 export default function AssignmentsPage() {
   const router = useRouter();
   const { canWrite } = useRole();
+  const { formatDate } = useDateFormat();
+  const { t } = useTranslation();
   const [dialogOpen, setDialogOpen] = useState(false);
 
   const query = useQuery({
@@ -44,18 +48,18 @@ export default function AssignmentsPage() {
   return (
     <>
       <PageHeader
-        title="Assignments"
-        description="Bindings of rule groups to employee, paygroup, location, department, or state populations."
+        title={t("assignments.title")}
+        description={t("assignments.description")}
         actions={
           <div className="flex gap-2">
             <Button variant="outline" nativeButton={false} render={<Link href="/resolve" />}>
               <ShieldCheckIcon className="size-4" />
-              Resolve
+              {t("assignments.resolve")}
             </Button>
             {canWrite ? (
               <Button onClick={() => setDialogOpen(true)}>
                 <PlusIcon className="size-4" />
-                New assignment
+                {t("assignments.newAssignment")}
               </Button>
             ) : null}
           </div>
@@ -72,9 +76,16 @@ export default function AssignmentsPage() {
         </div>
       ) : items.length === 0 ? (
         <EmptyState
-          title="No assignments yet"
-          description={canWrite ? "Assign a rule group to a population to make it resolvable." : "Nothing to show."}
-          action={canWrite ? <Button onClick={() => setDialogOpen(true)}><PlusIcon className="size-4" />New assignment</Button> : undefined}
+          title={t("assignments.noneFound")}
+          description={canWrite ? t("assignments.noneFoundHint") : t("common.nothingToShow")}
+          action={
+            canWrite ? (
+              <Button onClick={() => setDialogOpen(true)}>
+                <PlusIcon className="size-4" />
+                {t("assignments.newAssignment")}
+              </Button>
+            ) : undefined
+          }
         />
       ) : (
         <Card className="overflow-hidden p-0">
@@ -82,12 +93,12 @@ export default function AssignmentsPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Rule group</TableHead>
-                  <TableHead>Target</TableHead>
-                  <TableHead>Population</TableHead>
-                  <TableHead className="text-right">Priority</TableHead>
-                  <TableHead>Effective</TableHead>
-                  <TableHead>Status</TableHead>
+                  <TableHead>{t("assignments.colRuleGroup")}</TableHead>
+                  <TableHead>{t("assignments.colTarget")}</TableHead>
+                  <TableHead>{t("assignments.colPopulation")}</TableHead>
+                  <TableHead className="text-end">{t("assignments.colPriority")}</TableHead>
+                  <TableHead>{t("assignments.colEffective")}</TableHead>
+                  <TableHead>{t("assignments.colStatus")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -96,12 +107,12 @@ export default function AssignmentsPage() {
                     <TableCell className="font-medium">
                       {nameById.get(a.ruleGroupId) ?? <span className="font-mono text-xs">{a.ruleGroupId.slice(0, 8)}…</span>}
                     </TableCell>
-                    <TableCell className="capitalize text-muted-foreground">{a.targetType.toLowerCase()}</TableCell>
+                    <TableCell className="text-muted-foreground">{t(`targetTypes.${a.targetType}`)}</TableCell>
                     <TableCell className="max-w-64 truncate text-muted-foreground">{a.targetIds.join(", ")}</TableCell>
-                    <TableCell className="text-right tabular-nums">{a.priority}</TableCell>
+                    <TableCell className="text-end tabular-nums">{a.priority}</TableCell>
                     <TableCell className="text-muted-foreground">{formatDate(a.effectiveFrom)}</TableCell>
                     <TableCell>
-                      <StatusBadge tone={assignmentStatusTone(a.status)}>{a.status}</StatusBadge>
+                      <StatusBadge tone={assignmentStatusTone(a.status)}>{t(`assignmentStatus.${a.status}`)}</StatusBadge>
                     </TableCell>
                   </TableRow>
                 ))}

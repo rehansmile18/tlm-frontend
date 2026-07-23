@@ -4,7 +4,8 @@ import { PlusIcon, Trash2Icon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { NativeSelect } from "@/components/ui/native-select";
+import { Combobox, ComboboxItem } from "@/components/ui/combobox";
+import { useTranslation } from "@/lib/i18n/i18n";
 import type { JsonSchema } from "@/lib/types";
 
 type RulesValue = Record<string, unknown>;
@@ -39,6 +40,7 @@ export function defaultForSchema(schema: JsonSchema): unknown {
   }
 }
 
+/** Mechanical fallback for a rule-field key that has no translation entry yet. */
 export function humanizeKey(key: string): string {
   return key
     .replace(/([A-Z])/g, " $1")
@@ -132,6 +134,10 @@ export function RulesFields({
   onChange: (next: RulesValue) => void;
   path?: string;
 }) {
+  const { t, tOptional } = useTranslation();
+  const fieldLabel = (key: string) => tOptional(`ruleFields.${key}`) ?? humanizeKey(key);
+  const enumLabel = (raw: string) => tOptional(`ruleEnums.${raw}`) ?? raw;
+
   const properties = schema.properties ?? {};
   const required = new Set(schema.required ?? []);
   const setKey = (key: string, next: unknown) => onChange({ ...value, [key]: next });
@@ -142,6 +148,7 @@ export function RulesFields({
         const type = baseType(propSchema);
         const id = `${path}.${key}`;
         const current = value[key];
+        const label = fieldLabel(key);
 
         if (type === "boolean") {
           return (
@@ -153,31 +160,28 @@ export function RulesFields({
                 checked={Boolean(current)}
                 onChange={(e) => setKey(key, e.target.checked)}
               />
-              {humanizeKey(key)}
+              {label}
             </label>
           );
         }
 
         if (type === "string" && propSchema.enum) {
           return (
-            <FieldRow key={key} label={humanizeKey(key)} required={required.has(key)} htmlFor={id}>
-              <NativeSelect id={id} value={current == null ? "" : String(current)} onChange={(e) => setKey(key, e.target.value)}>
-                <option value="" disabled>
-                  Select…
-                </option>
+            <FieldRow key={key} label={label} required={required.has(key)} htmlFor={id}>
+              <Combobox id={id} value={current == null ? "" : String(current)} onValueChange={(value) => setKey(key, value)} placeholder={t("common.select")}>
                 {propSchema.enum.map((opt) => (
-                  <option key={String(opt)} value={String(opt)}>
-                    {String(opt)}
-                  </option>
+                  <ComboboxItem key={String(opt)} value={String(opt)}>
+                    {enumLabel(String(opt))}
+                  </ComboboxItem>
                 ))}
-              </NativeSelect>
+              </Combobox>
             </FieldRow>
           );
         }
 
         if (type === "number") {
           return (
-            <FieldRow key={key} label={humanizeKey(key)} required={required.has(key)} htmlFor={id}>
+            <FieldRow key={key} label={label} required={required.has(key)} htmlFor={id}>
               <Input
                 id={id}
                 type="number"
@@ -195,7 +199,7 @@ export function RulesFields({
           const nested = current && typeof current === "object" && !Array.isArray(current) ? (current as RulesValue) : {};
           return (
             <fieldset key={key} className="space-y-3 rounded-lg border p-3">
-              <legend className="px-1 text-xs font-medium text-muted-foreground">{humanizeKey(key)}</legend>
+              <legend className="px-1 text-xs font-medium text-muted-foreground">{label}</legend>
               <RulesFields schema={propSchema} value={nested} onChange={(nv) => setKey(key, nv)} path={id} />
             </fieldset>
           );
@@ -208,7 +212,7 @@ export function RulesFields({
             <div key={key} className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label className="text-xs">
-                  {humanizeKey(key)}
+                  {label}
                   {required.has(key) ? <span className="text-destructive"> *</span> : null}
                 </Label>
                 <Button
@@ -218,10 +222,10 @@ export function RulesFields({
                   onClick={() => setKey(key, [...arr, defaultForSchema(itemSchema) as RulesValue])}
                 >
                   <PlusIcon className="size-3.5" />
-                  Add
+                  {t("common.add")}
                 </Button>
               </div>
-              {arr.length === 0 ? <p className="text-xs text-muted-foreground">No entries yet.</p> : null}
+              {arr.length === 0 ? <p className="text-xs text-muted-foreground">{t("common.noEntriesYet")}</p> : null}
               <div className="space-y-2">
                 {arr.map((item, index) => (
                   <div key={index} className="rounded-lg border p-3">
@@ -231,7 +235,7 @@ export function RulesFields({
                         type="button"
                         variant="ghost"
                         size="icon-sm"
-                        aria-label="Remove entry"
+                        aria-label={t("common.remove")}
                         onClick={() => setKey(key, arr.filter((_, i) => i !== index))}
                       >
                         <Trash2Icon className="size-3.5" />
@@ -255,7 +259,7 @@ export function RulesFields({
         }
 
         return (
-          <FieldRow key={key} label={humanizeKey(key)} required={required.has(key)} htmlFor={id}>
+          <FieldRow key={key} label={label} required={required.has(key)} htmlFor={id}>
             <Input
               id={id}
               value={current == null ? "" : String(current)}

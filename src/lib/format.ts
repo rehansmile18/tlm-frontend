@@ -1,16 +1,26 @@
 import { format, isValid, parseISO } from "date-fns";
-import type { AssignmentStatus, PolicyStatus, PolicyType, RuleGroupStatus, UserRole } from "./types";
+import type { AssignmentStatus, CalendarFormat, PolicyStatus, PolicyType, RuleGroupStatus, UserRole } from "./types";
 
-export function formatDate(iso?: string | null): string {
+// date-fns pattern for each per-client CalendarFormat setting (see useDateFormat/DateFormatProvider
+// in date-format.tsx, which is the format-aware entry point most UI should use instead of these).
+export const CALENDAR_FORMAT_PATTERNS: Record<CalendarFormat, string> = {
+  "MM/DD/YYYY": "MM/dd/yyyy",
+  "DD/MM/YYYY": "dd/MM/yyyy",
+  "YYYY-MM-DD": "yyyy-MM-dd",
+};
+
+/** Locale-agnostic fallback (no client format available yet, e.g. before login resolves). */
+export function formatDate(iso?: string | null, pattern: string = "MM/dd/yyyy"): string {
   if (!iso) return "—";
   const d = parseISO(iso);
-  return isValid(d) ? format(d, "MMM d, yyyy") : "—";
+  return isValid(d) ? format(d, pattern) : "—";
 }
 
-export function formatDateTime(iso?: string | null): string {
+/** Locale-agnostic fallback (no client format available yet, e.g. before login resolves). */
+export function formatDateTime(iso?: string | null, pattern: string = "MM/dd/yyyy"): string {
   if (!iso) return "—";
   const d = parseISO(iso);
-  return isValid(d) ? format(d, "MMM d, yyyy · HH:mm") : "—";
+  return isValid(d) ? format(d, `${pattern} · HH:mm`) : "—";
 }
 
 /** ISO string -> "yyyy-MM-dd" for <input type="date">. */

@@ -17,7 +17,9 @@ import { RuleGroupFormDialog } from "@/components/rule-groups/rule-group-form-di
 import { policiesApi, ruleGroupsApi } from "@/lib/resources";
 import { queryKeys } from "@/lib/query-keys";
 import { useRole } from "@/lib/auth";
-import { formatDate, formatDateTime, humanizePolicyType, ruleGroupStatusTone } from "@/lib/format";
+import { useDateFormat } from "@/lib/date-format";
+import { useTranslation } from "@/lib/i18n/i18n";
+import { ruleGroupStatusTone } from "@/lib/format";
 import type { RuleGroup } from "@/lib/types";
 
 function DetailRow({ label, children }: { label: string; children: React.ReactNode }) {
@@ -33,6 +35,8 @@ export default function RuleGroupDetailPage() {
   const { ruleGroupId } = useParams<{ ruleGroupId: string }>();
   const queryClient = useQueryClient();
   const { canWrite } = useRole();
+  const { formatDate, formatDateTime } = useDateFormat();
+  const { t } = useTranslation();
   const [editOpen, setEditOpen] = useState(false);
 
   const rgQuery = useQuery({ queryKey: queryKeys.ruleGroup(ruleGroupId), queryFn: () => ruleGroupsApi.get(ruleGroupId) });
@@ -52,7 +56,7 @@ export default function RuleGroupDetailPage() {
       toast.success(v.label);
       invalidate();
     },
-    onError: (error) => toast.error("Action failed", { description: humanizeError(error) }),
+    onError: (error) => toast.error(t("policies.actionFailed"), { description: humanizeError(error) }),
   });
 
   if (rgQuery.isError) return <ErrorState error={rgQuery.error} onRetry={() => rgQuery.refetch()} />;
@@ -72,29 +76,29 @@ export default function RuleGroupDetailPage() {
   return (
     <>
       <Link href="/rule-groups" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
-        <ArrowLeftIcon className="size-4" />
-        Back to rule groups
+        <ArrowLeftIcon className="size-4 rtl:rotate-180" />
+        {t("ruleGroups.backToRuleGroups")}
       </Link>
 
       <PageHeader
         title={rg.name}
-        description={`v${rg.version} · ${rg.policyRefs.length} ${rg.policyRefs.length === 1 ? "policy" : "policies"}`}
+        description={`v${rg.version} · ${rg.policyRefs.length} ${t("ruleGroups.colPolicies").toLowerCase()}`}
         actions={
           <div className="flex flex-wrap items-center gap-2">
-            <StatusBadge tone={ruleGroupStatusTone(rg.status)}>{rg.status}</StatusBadge>
+            <StatusBadge tone={ruleGroupStatusTone(rg.status)}>{t(`ruleGroupStatus.${rg.status}`)}</StatusBadge>
             {canWrite && rg.status === "draft" ? (
-              <Button size="sm" disabled={busy} onClick={() => action.mutate({ label: "Rule group published", run: () => ruleGroupsApi.publish(ruleGroupId) })}>
-                Publish
+              <Button size="sm" disabled={busy} onClick={() => action.mutate({ label: t("common.publish"), run: () => ruleGroupsApi.publish(ruleGroupId) })}>
+                {t("common.publish")}
               </Button>
             ) : null}
             {canWrite && rg.status === "active" ? (
               <>
                 <Button size="sm" variant="outline" onClick={() => setEditOpen(true)}>
                   <PencilIcon className="size-3.5" />
-                  Edit
+                  {t("common.edit")}
                 </Button>
-                <Button size="sm" variant="outline" disabled={busy} onClick={() => action.mutate({ label: "Rule group archived", run: () => ruleGroupsApi.archive(ruleGroupId) })}>
-                  Archive
+                <Button size="sm" variant="outline" disabled={busy} onClick={() => action.mutate({ label: t("common.archive"), run: () => ruleGroupsApi.archive(ruleGroupId) })}>
+                  {t("common.archive")}
                 </Button>
               </>
             ) : null}
@@ -104,14 +108,14 @@ export default function RuleGroupDetailPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Details</CardTitle>
+          <CardTitle className="text-base">{t("ruleGroups.details")}</CardTitle>
         </CardHeader>
         <CardContent>
           <dl className="grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-4">
-            <DetailRow label="Version">v{rg.version}</DetailRow>
-            <DetailRow label="Effective from">{formatDate(rg.effectiveFrom)}</DetailRow>
-            <DetailRow label="Effective to">{rg.effectiveTo ? formatDate(rg.effectiveTo) : "Open"}</DetailRow>
-            <DetailRow label="Updated">{formatDateTime(rg.metadata?.updatedAt)}</DetailRow>
+            <DetailRow label={t("common.version")}>v{rg.version}</DetailRow>
+            <DetailRow label={t("common.effectiveFrom")}>{formatDate(rg.effectiveFrom)}</DetailRow>
+            <DetailRow label={t("common.effectiveTo")}>{rg.effectiveTo ? formatDate(rg.effectiveTo) : "—"}</DetailRow>
+            <DetailRow label={t("common.updatedAt")}>{formatDateTime(rg.metadata?.updatedAt)}</DetailRow>
           </dl>
           {rg.description ? <p className="mt-4 border-t pt-3 text-sm text-muted-foreground">{rg.description}</p> : null}
         </CardContent>
@@ -119,27 +123,32 @@ export default function RuleGroupDetailPage() {
 
       <Card className="overflow-hidden p-0">
         <CardHeader className="p-4">
-          <CardTitle className="text-base">Policies in this group</CardTitle>
+          <CardTitle className="text-base">{t("ruleGroups.policiesInGroup")}</CardTitle>
+          <p className="text-xs text-muted-foreground">{t("ruleGroups.appliedInOrderReadOnly")}</p>
         </CardHeader>
         <div className="overflow-x-auto border-t">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Policy</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Version pin</TableHead>
+                <TableHead className="w-12 text-end">{t("ruleGroups.colSequence")}</TableHead>
+                <TableHead>{t("ruleGroups.colPolicy")}</TableHead>
+                <TableHead>{t("ruleGroups.colType")}</TableHead>
+                <TableHead>{t("ruleGroups.colVersionPin")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {rg.policyRefs.map((ref) => (
+              {rg.policyRefs.map((ref, index) => (
                 <TableRow key={`${ref.policyId}-${ref.policyType}`}>
+                  <TableCell className="text-end tabular-nums text-muted-foreground">{index + 1}</TableCell>
                   <TableCell className="font-medium">
                     <Link href={`/policies/${ref.policyId}`} className="hover:underline">
                       {nameById.get(ref.policyId) ?? <span className="font-mono text-xs">{ref.policyId.slice(0, 8)}…</span>}
                     </Link>
                   </TableCell>
-                  <TableCell className="text-muted-foreground">{humanizePolicyType(ref.policyType)}</TableCell>
-                  <TableCell className="text-muted-foreground">{ref.versionPin === "latest" ? "Latest active" : `Pinned v${ref.versionPin}`}</TableCell>
+                  <TableCell className="text-muted-foreground">{t(`policyTypes.${ref.policyType}`)}</TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {ref.versionPin === "latest" ? t("ruleGroups.latestActive") : t("ruleGroups.pinnedVersion", { version: ref.versionPin })}
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>

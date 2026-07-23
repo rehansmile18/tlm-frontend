@@ -15,25 +15,27 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { NativeSelect } from "@/components/ui/native-select";
+import { Combobox, ComboboxItem } from "@/components/ui/combobox";
 import { assignmentsApi, ruleGroupsApi, type CreateAssignmentBody } from "@/lib/resources";
 import { queryKeys } from "@/lib/query-keys";
 import { useClients } from "@/lib/hooks";
 import { useRole } from "@/lib/auth";
+import { useTranslation, type TranslationKey } from "@/lib/i18n/i18n";
 import { humanizeError } from "@/components/data-state";
 import { toDateInput } from "@/lib/format";
 import { ASSIGNMENT_TARGET_TYPES, type AssignmentTargetType, type RuleGroup } from "@/lib/types";
 
-const TARGET_HELP: Record<AssignmentTargetType, string> = {
-  EMPLOYEE: "Employee IDs, comma-separated (e.g. emp-1001, emp-1002)",
-  PAYGROUP: "Paygroup IDs, comma-separated",
-  LOCATION: "Location IDs, comma-separated",
-  DEPARTMENT: "Department IDs, comma-separated",
-  STATE: "Two-letter state codes, comma-separated (e.g. CA, TX)",
+const TARGET_HELP_KEY: Record<AssignmentTargetType, TranslationKey> = {
+  EMPLOYEE: "assignments.targetHelpEmployee",
+  PAYGROUP: "assignments.targetHelpPaygroup",
+  LOCATION: "assignments.targetHelpLocation",
+  DEPARTMENT: "assignments.targetHelpDepartment",
+  STATE: "assignments.targetHelpState",
 };
 
 function AssignmentForm({ onDone }: { onDone: () => void }) {
   const { isPlatformAdmin, clientId: ownClientId } = useRole();
+  const { t } = useTranslation();
   const clients = useClients();
   const queryClient = useQueryClient();
 
@@ -78,18 +80,18 @@ function AssignmentForm({ onDone }: { onDone: () => void }) {
       return assignmentsApi.create(body);
     },
     onSuccess: () => {
-      toast.success("Assignment created");
+      toast.success(t("assignments.toastCreated"));
       queryClient.invalidateQueries({ queryKey: ["assignments"] });
       onDone();
     },
-    onError: (error) => toast.error("Couldn't create assignment", { description: humanizeError(error) }),
+    onError: (error) => toast.error(t("assignments.couldntCreate"), { description: humanizeError(error) }),
   });
 
   function submit(event: React.FormEvent) {
     event.preventDefault();
-    if (!clientId) return toast.error("Select a client");
-    if (!ruleGroupId) return toast.error("Select a rule group");
-    if (!targetIdsText.trim()) return toast.error("Add at least one target ID");
+    if (!clientId) return toast.error(t("common.selectClient"));
+    if (!ruleGroupId) return toast.error(t("assignments.selectRuleGroup"));
+    if (!targetIdsText.trim()) return toast.error(t("assignments.addAtLeastOneTargetId"));
     mutation.mutate();
   }
 
@@ -97,71 +99,71 @@ function AssignmentForm({ onDone }: { onDone: () => void }) {
     <form onSubmit={submit} className="space-y-4">
       {isPlatformAdmin ? (
         <div className="space-y-1.5">
-          <Label htmlFor="aClient">Client</Label>
-          <NativeSelect
+          <Label htmlFor="aClient">{t("assignments.client")}</Label>
+          <Combobox
             id="aClient"
             value={clientId}
-            onChange={(e) => {
-              setClientId(e.target.value);
+            placeholder={t("assignments.selectClient")}
+            onValueChange={(value) => {
+              setClientId(value);
               setRuleGroupId("");
             }}
           >
-            <option value="" disabled>
-              Select a client…
-            </option>
             {clients.data?.items.map((c) => (
-              <option key={c._id} value={c._id}>
+              <ComboboxItem key={c._id} value={c._id}>
                 {c.name}
-              </option>
+              </ComboboxItem>
             ))}
-          </NativeSelect>
+          </Combobox>
         </div>
       ) : null}
 
       <div className="space-y-1.5">
-        <Label htmlFor="aRuleGroup">Rule group</Label>
-        <NativeSelect id="aRuleGroup" value={ruleGroupId} onChange={(e) => setRuleGroupId(e.target.value)}>
-          <option value="" disabled>
-            {availableGroups.length ? "Select a rule group…" : "No active rule groups for this client"}
-          </option>
+        <Label htmlFor="aRuleGroup">{t("assignments.ruleGroup")}</Label>
+        <Combobox
+          id="aRuleGroup"
+          value={ruleGroupId}
+          onValueChange={setRuleGroupId}
+          placeholder={availableGroups.length ? t("assignments.selectRuleGroup") : t("assignments.noActiveRuleGroups")}
+        >
           {availableGroups.map((rg) => (
-            <option key={rg.ruleGroupId} value={rg.ruleGroupId}>
+            <ComboboxItem key={rg.ruleGroupId} value={rg.ruleGroupId}>
               {rg.name}
-            </option>
+            </ComboboxItem>
           ))}
-        </NativeSelect>
+        </Combobox>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-1.5">
-          <Label htmlFor="aTargetType">Target type</Label>
-          <NativeSelect id="aTargetType" value={targetType} onChange={(e) => setTargetType(e.target.value as AssignmentTargetType)}>
-            {ASSIGNMENT_TARGET_TYPES.map((t) => (
-              <option key={t} value={t}>
-                {t.charAt(0) + t.slice(1).toLowerCase()}
-              </option>
+          <Label htmlFor="aTargetType">{t("assignments.targetType")}</Label>
+          <Combobox id="aTargetType" value={targetType} onValueChange={(v) => setTargetType(v as AssignmentTargetType)}>
+            {ASSIGNMENT_TARGET_TYPES.map((tt) => (
+              <ComboboxItem key={tt} value={tt}>
+                {t(`targetTypes.${tt}`)}
+              </ComboboxItem>
             ))}
-          </NativeSelect>
+          </Combobox>
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="aPriority">Priority</Label>
+          <Label htmlFor="aPriority">{t("assignments.priority")}</Label>
           <Input id="aPriority" type="number" value={priority} onChange={(e) => setPriority(e.target.value)} />
         </div>
       </div>
 
       <div className="space-y-1.5">
-        <Label htmlFor="aTargets">Targets</Label>
-        <Input id="aTargets" value={targetIdsText} onChange={(e) => setTargetIdsText(e.target.value)} placeholder="CA, TX" />
-        <p className="text-xs text-muted-foreground">{TARGET_HELP[targetType]}</p>
+        <Label htmlFor="aTargets">{t("assignments.targets")}</Label>
+        <Input id="aTargets" value={targetIdsText} onChange={(e) => setTargetIdsText(e.target.value)} placeholder={t("assignments.targetsPlaceholder")} />
+        <p className="text-xs text-muted-foreground">{t(TARGET_HELP_KEY[targetType])}</p>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-1.5">
-          <Label htmlFor="aFrom">Effective from</Label>
+          <Label htmlFor="aFrom">{t("assignments.effectiveFrom")}</Label>
           <Input id="aFrom" type="date" value={effectiveFrom} onChange={(e) => setEffectiveFrom(e.target.value)} />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="aTo">Effective to (optional)</Label>
+          <Label htmlFor="aTo">{t("assignments.effectiveTo")}</Label>
           <Input id="aTo" type="date" value={effectiveTo} onChange={(e) => setEffectiveTo(e.target.value)} />
         </div>
       </div>
@@ -169,7 +171,7 @@ function AssignmentForm({ onDone }: { onDone: () => void }) {
       <DialogFooter>
         <Button type="submit" disabled={mutation.isPending}>
           {mutation.isPending ? <Loader2Icon className="size-4 animate-spin" /> : null}
-          Create assignment
+          {t("assignments.createAssignment")}
         </Button>
       </DialogFooter>
     </form>
@@ -177,12 +179,13 @@ function AssignmentForm({ onDone }: { onDone: () => void }) {
 }
 
 export function AssignmentFormDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
+  const { t } = useTranslation();
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-xl">
         <DialogHeader>
-          <DialogTitle>New assignment</DialogTitle>
-          <DialogDescription>Bind a rule group to a population. Specificity (employee &gt; paygroup &gt; … &gt; state) resolves overlaps.</DialogDescription>
+          <DialogTitle>{t("assignments.newDialogTitle")}</DialogTitle>
+          <DialogDescription>{t("assignments.newDialogDescription")}</DialogDescription>
         </DialogHeader>
         {open ? <AssignmentForm onDone={() => onOpenChange(false)} /> : null}
       </DialogContent>

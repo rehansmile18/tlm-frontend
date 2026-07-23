@@ -32,6 +32,11 @@ export type RuleGroupStatus = (typeof RULE_GROUP_STATUSES)[number];
 export const USER_ROLES = ["PLATFORM_ADMIN", "CLIENT_ADMIN", "VIEWER"] as const;
 export type UserRole = (typeof USER_ROLES)[number];
 
+// Per-client date DISPLAY format (day/month/year order) shown to every user under that client,
+// everywhere in the app. Calendar math stays Gregorian — this only controls rendering.
+export const CALENDAR_FORMATS = ["MM/DD/YYYY", "DD/MM/YYYY", "YYYY-MM-DD"] as const;
+export type CalendarFormat = (typeof CALENDAR_FORMATS)[number];
+
 // Specificity used by resolve when target populations overlap (higher wins).
 export const TARGET_TYPE_SPECIFICITY: Record<AssignmentTargetType, number> = {
   EMPLOYEE: 50,
@@ -150,8 +155,20 @@ export interface Client {
   _id: string;
   name: string;
   status: string;
+  country: string | null;
   enabledStates: string[];
+  calendarFormat: CalendarFormat;
   createdAt: string;
+}
+
+export interface GeoCountry {
+  isoCode: string;
+  name: string;
+}
+
+export interface GeoState {
+  isoCode: string;
+  name: string;
 }
 
 export interface UserRecord {

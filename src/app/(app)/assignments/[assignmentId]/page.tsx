@@ -16,7 +16,9 @@ import { AssignmentEditDialog } from "@/components/assignments/assignment-edit-d
 import { assignmentsApi, ruleGroupsApi } from "@/lib/resources";
 import { queryKeys } from "@/lib/query-keys";
 import { useRole } from "@/lib/auth";
-import { assignmentStatusTone, formatDate } from "@/lib/format";
+import { useDateFormat } from "@/lib/date-format";
+import { useTranslation } from "@/lib/i18n/i18n";
+import { assignmentStatusTone } from "@/lib/format";
 
 function DetailRow({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -31,6 +33,8 @@ export default function AssignmentDetailPage() {
   const { assignmentId } = useParams<{ assignmentId: string }>();
   const queryClient = useQueryClient();
   const { canWrite } = useRole();
+  const { formatDate } = useDateFormat();
+  const { t } = useTranslation();
   const [editOpen, setEditOpen] = useState(false);
 
   const query = useQuery({ queryKey: queryKeys.assignment(assignmentId), queryFn: () => assignmentsApi.get(assignmentId) });
@@ -42,11 +46,11 @@ export default function AssignmentDetailPage() {
   const deactivate = useMutation({
     mutationFn: () => assignmentsApi.update(assignmentId, { status: "expired" }),
     onSuccess: () => {
-      toast.success("Assignment deactivated");
+      toast.success(t("assignments.toastDeactivated"));
       queryClient.invalidateQueries({ queryKey: ["assignment", assignmentId] });
       queryClient.invalidateQueries({ queryKey: ["assignments"] });
     },
-    onError: (error) => toast.error("Couldn't deactivate", { description: humanizeError(error) }),
+    onError: (error) => toast.error(t("assignments.couldntDeactivate"), { description: humanizeError(error) }),
   });
 
   if (query.isError) return <ErrorState error={query.error} onRetry={() => query.refetch()} />;
@@ -65,25 +69,25 @@ export default function AssignmentDetailPage() {
   return (
     <>
       <Link href="/assignments" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
-        <ArrowLeftIcon className="size-4" />
-        Back to assignments
+        <ArrowLeftIcon className="size-4 rtl:rotate-180" />
+        {t("assignments.backToAssignments")}
       </Link>
 
       <PageHeader
-        title={ruleGroupName ?? "Assignment"}
-        description={`${a.targetType.toLowerCase()} · ${a.targetIds.length} target${a.targetIds.length === 1 ? "" : "s"}`}
+        title={ruleGroupName ?? t("assignments.unnamed")}
+        description={`${t(`targetTypes.${a.targetType}`)} · ${a.targetIds.length} ${t("assignments.targetsInline")}`}
         actions={
           <div className="flex flex-wrap items-center gap-2">
-            <StatusBadge tone={assignmentStatusTone(a.status)}>{a.status}</StatusBadge>
+            <StatusBadge tone={assignmentStatusTone(a.status)}>{t(`assignmentStatus.${a.status}`)}</StatusBadge>
             {canWrite ? (
               <Button size="sm" variant="outline" onClick={() => setEditOpen(true)}>
                 <PencilIcon className="size-3.5" />
-                Edit
+                {t("common.edit")}
               </Button>
             ) : null}
             {canWrite && a.status !== "expired" ? (
               <Button size="sm" variant="outline" disabled={deactivate.isPending} onClick={() => deactivate.mutate()}>
-                Deactivate
+                {t("assignments.deactivate")}
               </Button>
             ) : null}
           </div>
@@ -92,22 +96,22 @@ export default function AssignmentDetailPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Details</CardTitle>
+          <CardTitle className="text-base">{t("assignments.details")}</CardTitle>
         </CardHeader>
         <CardContent>
           <dl className="grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-3">
-            <DetailRow label="Rule group">
+            <DetailRow label={t("assignments.ruleGroup")}>
               <Link href={`/rule-groups/${a.ruleGroupId}`} className="text-primary hover:underline">
                 {ruleGroupName ?? <span className="font-mono text-xs">{a.ruleGroupId.slice(0, 8)}…</span>}
               </Link>
             </DetailRow>
-            <DetailRow label="Target type">{a.targetType.charAt(0) + a.targetType.slice(1).toLowerCase()}</DetailRow>
-            <DetailRow label="Priority">{a.priority}</DetailRow>
-            <DetailRow label="Effective from">{formatDate(a.effectiveFrom)}</DetailRow>
-            <DetailRow label="Effective to">{a.effectiveTo ? formatDate(a.effectiveTo) : "Open"}</DetailRow>
-            <DetailRow label="Status">{a.status}</DetailRow>
+            <DetailRow label={t("assignments.targetType")}>{t(`targetTypes.${a.targetType}`)}</DetailRow>
+            <DetailRow label={t("assignments.priority")}>{a.priority}</DetailRow>
+            <DetailRow label={t("common.effectiveFrom")}>{formatDate(a.effectiveFrom)}</DetailRow>
+            <DetailRow label={t("common.effectiveTo")}>{a.effectiveTo ? formatDate(a.effectiveTo) : t("assignments.open")}</DetailRow>
+            <DetailRow label={t("assignments.status")}>{t(`assignmentStatus.${a.status}`)}</DetailRow>
             <div className="col-span-2 sm:col-span-3">
-              <DetailRow label="Population">
+              <DetailRow label={t("assignments.population")}>
                 <div className="flex flex-wrap gap-1.5">
                   {a.targetIds.map((id) => (
                     <span key={id} className="rounded-md bg-muted px-2 py-0.5 font-mono text-xs">

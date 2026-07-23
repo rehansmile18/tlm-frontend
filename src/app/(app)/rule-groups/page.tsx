@@ -7,7 +7,7 @@ import { PlusIcon } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { NativeSelect } from "@/components/ui/native-select";
+import { Combobox, ComboboxItem } from "@/components/ui/combobox";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StatusBadge } from "@/components/status-badge";
 import { EmptyState, ErrorState } from "@/components/data-state";
@@ -16,12 +16,16 @@ import { RuleGroupFormDialog } from "@/components/rule-groups/rule-group-form-di
 import { ruleGroupsApi, type RuleGroupListParams } from "@/lib/resources";
 import { queryKeys } from "@/lib/query-keys";
 import { useRole } from "@/lib/auth";
-import { formatDate, ruleGroupStatusTone } from "@/lib/format";
+import { useDateFormat } from "@/lib/date-format";
+import { useTranslation } from "@/lib/i18n/i18n";
+import { ruleGroupStatusTone } from "@/lib/format";
 import { RULE_GROUP_STATUSES, type RuleGroup } from "@/lib/types";
 
 export default function RuleGroupsPage() {
   const router = useRouter();
   const { canWrite } = useRole();
+  const { formatDate } = useDateFormat();
+  const { t } = useTranslation();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [status, setStatus] = useState<RuleGroupListParams["status"] | "">("");
 
@@ -45,32 +49,32 @@ export default function RuleGroupsPage() {
   return (
     <>
       <PageHeader
-        title="Rule Groups"
-        description="Named bundles of policies a client assigns to a workforce population."
+        title={t("ruleGroups.title")}
+        description={t("ruleGroups.description")}
         actions={
           canWrite ? (
             <Button onClick={() => setDialogOpen(true)}>
               <PlusIcon className="size-4" />
-              New rule group
+              {t("ruleGroups.newRuleGroup")}
             </Button>
           ) : null
         }
       />
 
       <Card className="p-4">
-        <NativeSelect
-          aria-label="Filter by status"
-          className="sm:max-w-48"
+        <Combobox
+          aria-label={t("ruleGroups.filterByStatus")}
+          wrapperClassName="sm:max-w-48"
           value={status ?? ""}
-          onChange={(e) => setStatus((e.target.value || "") as RuleGroupListParams["status"] | "")}
+          onValueChange={(value) => setStatus((value || "") as RuleGroupListParams["status"] | "")}
         >
-          <option value="">All statuses</option>
+          <ComboboxItem value="">{t("ruleGroups.allStatuses")}</ComboboxItem>
           {RULE_GROUP_STATUSES.map((s) => (
-            <option key={s} value={s}>
-              {s}
-            </option>
+            <ComboboxItem key={s} value={s}>
+              {t(`ruleGroupStatus.${s}`)}
+            </ComboboxItem>
           ))}
-        </NativeSelect>
+        </Combobox>
       </Card>
 
       {query.isError ? (
@@ -83,9 +87,16 @@ export default function RuleGroupsPage() {
         </div>
       ) : latest.length === 0 ? (
         <EmptyState
-          title="No rule groups yet"
-          description={canWrite ? "Bundle a few policies into a reusable group." : "Nothing to show."}
-          action={canWrite ? <Button onClick={() => setDialogOpen(true)}><PlusIcon className="size-4" />New rule group</Button> : undefined}
+          title={t("ruleGroups.noneFound")}
+          description={canWrite ? t("ruleGroups.noneFoundHint") : t("common.nothingToShow")}
+          action={
+            canWrite ? (
+              <Button onClick={() => setDialogOpen(true)}>
+                <PlusIcon className="size-4" />
+                {t("ruleGroups.newRuleGroup")}
+              </Button>
+            ) : undefined
+          }
         />
       ) : (
         <Card className="overflow-hidden p-0">
@@ -93,22 +104,22 @@ export default function RuleGroupsPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead className="text-right">Version</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Policies</TableHead>
-                  <TableHead>Effective</TableHead>
+                  <TableHead>{t("ruleGroups.colName")}</TableHead>
+                  <TableHead className="text-end">{t("ruleGroups.colVersion")}</TableHead>
+                  <TableHead>{t("ruleGroups.colStatus")}</TableHead>
+                  <TableHead className="text-end">{t("ruleGroups.colPolicies")}</TableHead>
+                  <TableHead>{t("ruleGroups.colEffective")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {latest.map((rg) => (
                   <TableRow key={rg._id} className="cursor-pointer" onClick={() => router.push(`/rule-groups/${rg.ruleGroupId}`)}>
                     <TableCell className="font-medium">{rg.name}</TableCell>
-                    <TableCell className="text-right tabular-nums">v{rg.version}</TableCell>
+                    <TableCell className="text-end tabular-nums">v{rg.version}</TableCell>
                     <TableCell>
-                      <StatusBadge tone={ruleGroupStatusTone(rg.status)}>{rg.status}</StatusBadge>
+                      <StatusBadge tone={ruleGroupStatusTone(rg.status)}>{t(`ruleGroupStatus.${rg.status}`)}</StatusBadge>
                     </TableCell>
-                    <TableCell className="text-right tabular-nums">{rg.policyRefs.length}</TableCell>
+                    <TableCell className="text-end tabular-nums">{rg.policyRefs.length}</TableCell>
                     <TableCell className="text-muted-foreground">{formatDate(rg.effectiveFrom)}</TableCell>
                   </TableRow>
                 ))}

@@ -4,7 +4,10 @@ import type {
   AssignmentStatus,
   AssignmentTargetType,
   AuditLog,
+  CalendarFormat,
   Client,
+  GeoCountry,
+  GeoState,
   LoginResponse,
   Paginated,
   Policy,
@@ -153,10 +156,23 @@ export const assignmentsApi = {
 };
 
 // ---- Clients ----
+export interface CreateClientBody {
+  name: string;
+  country?: string | null;
+  enabledStates: string[];
+  calendarFormat: CalendarFormat;
+}
+
 export const clientsApi = {
   list: () => apiFetch<{ items: Client[] }>("/clients"),
-  create: (body: { name: string; enabledStates: string[] }) =>
-    apiFetch<Client>("/clients", { method: "POST", body }),
+  create: (body: CreateClientBody) => apiFetch<Client>("/clients", { method: "POST", body }),
+  getMine: () => apiFetch<{ client: Client | null }>("/clients/me"),
+};
+
+// ---- Geo (countries / states reference data) ----
+export const geoApi = {
+  listCountries: () => apiFetch<{ items: GeoCountry[] }>("/geo/countries"),
+  listStates: (countryCode: string) => apiFetch<{ items: GeoState[] }>(`/geo/countries/${countryCode}/states`),
 };
 
 // ---- Users ----

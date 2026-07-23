@@ -7,7 +7,7 @@ import { PlusIcon } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { NativeSelect } from "@/components/ui/native-select";
+import { Combobox, ComboboxItem } from "@/components/ui/combobox";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StatusBadge } from "@/components/status-badge";
 import { EmptyState, ErrorState } from "@/components/data-state";
@@ -17,7 +17,9 @@ import { policiesApi, type PolicyListParams } from "@/lib/resources";
 import { queryKeys } from "@/lib/query-keys";
 import { usePolicyTypes } from "@/lib/hooks";
 import { useRole } from "@/lib/auth";
-import { formatDate, humanizePolicyType, policyStatusTone, US_STATES } from "@/lib/format";
+import { useDateFormat } from "@/lib/date-format";
+import { useTranslation } from "@/lib/i18n/i18n";
+import { policyStatusTone, US_STATES } from "@/lib/format";
 import { POLICY_STATUSES, POLICY_TYPES } from "@/lib/types";
 
 const PAGE_SIZE = 25;
@@ -25,6 +27,8 @@ const PAGE_SIZE = 25;
 export default function PoliciesPage() {
   const router = useRouter();
   const { canWrite } = useRole();
+  const { formatDate } = useDateFormat();
+  const { t } = useTranslation();
   const policyTypes = usePolicyTypes();
   const [dialogOpen, setDialogOpen] = useState(false);
 
@@ -50,13 +54,13 @@ export default function PoliciesPage() {
   return (
     <>
       <PageHeader
-        title="Policies"
-        description="Global (statutory) and client-specific compliance policies, effective-dated and versioned."
+        title={t("policies.title")}
+        description={t("policies.description")}
         actions={
           canWrite ? (
             <Button onClick={() => setDialogOpen(true)}>
               <PlusIcon className="size-4" />
-              New policy
+              {t("policies.newPolicy")}
             </Button>
           ) : null
         }
@@ -64,51 +68,51 @@ export default function PoliciesPage() {
 
       <Card className="p-4">
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <NativeSelect
-            aria-label="Filter by type"
+          <Combobox
+            aria-label={t("policies.filterByType")}
             value={filters.policyType ?? ""}
-            onChange={(e) => updateFilter({ policyType: (e.target.value || undefined) as PolicyListParams["policyType"] })}
+            onValueChange={(value) => updateFilter({ policyType: (value || undefined) as PolicyListParams["policyType"] })}
           >
-            <option value="">All types</option>
-            {POLICY_TYPES.map((t) => (
-              <option key={t} value={t}>
-                {humanizePolicyType(t)}
-              </option>
+            <ComboboxItem value="">{t("policies.allTypes")}</ComboboxItem>
+            {POLICY_TYPES.map((policyType) => (
+              <ComboboxItem key={policyType} value={policyType}>
+                {t(`policyTypes.${policyType}`)}
+              </ComboboxItem>
             ))}
-          </NativeSelect>
-          <NativeSelect
-            aria-label="Filter by scope"
+          </Combobox>
+          <Combobox
+            aria-label={t("policies.filterByScope")}
             value={filters.scope ?? ""}
-            onChange={(e) => updateFilter({ scope: (e.target.value || undefined) as PolicyListParams["scope"] })}
+            onValueChange={(value) => updateFilter({ scope: (value || undefined) as PolicyListParams["scope"] })}
           >
-            <option value="">All scopes</option>
-            <option value="global">Global</option>
-            <option value="client">Client</option>
-          </NativeSelect>
-          <NativeSelect
-            aria-label="Filter by status"
+            <ComboboxItem value="">{t("policies.allScopes")}</ComboboxItem>
+            <ComboboxItem value="global">{t("policies.global")}</ComboboxItem>
+            <ComboboxItem value="client">{t("policies.client")}</ComboboxItem>
+          </Combobox>
+          <Combobox
+            aria-label={t("policies.filterByStatus")}
             value={filters.status ?? ""}
-            onChange={(e) => updateFilter({ status: (e.target.value || undefined) as PolicyListParams["status"] })}
+            onValueChange={(value) => updateFilter({ status: (value || undefined) as PolicyListParams["status"] })}
           >
-            <option value="">All statuses</option>
-            {POLICY_STATUSES.map((s) => (
-              <option key={s} value={s}>
-                {s.replace(/_/g, " ")}
-              </option>
+            <ComboboxItem value="">{t("policies.allStatuses")}</ComboboxItem>
+            {POLICY_STATUSES.map((status) => (
+              <ComboboxItem key={status} value={status}>
+                {t(`policyStatus.${status}`)}
+              </ComboboxItem>
             ))}
-          </NativeSelect>
-          <NativeSelect
-            aria-label="Filter by state"
+          </Combobox>
+          <Combobox
+            aria-label={t("policies.filterByState")}
             value={filters.state ?? ""}
-            onChange={(e) => updateFilter({ state: e.target.value || undefined })}
+            onValueChange={(value) => updateFilter({ state: value || undefined })}
           >
-            <option value="">All states</option>
+            <ComboboxItem value="">{t("policies.allStates")}</ComboboxItem>
             {US_STATES.map((s) => (
-              <option key={s.code} value={s.code}>
+              <ComboboxItem key={s.code} value={s.code}>
                 {s.code}
-              </option>
+              </ComboboxItem>
             ))}
-          </NativeSelect>
+          </Combobox>
         </div>
       </Card>
 
@@ -122,9 +126,16 @@ export default function PoliciesPage() {
         </div>
       ) : items.length === 0 ? (
         <EmptyState
-          title="No policies found"
-          description={canWrite ? "Create your first policy to get started." : "Nothing matches these filters."}
-          action={canWrite ? <Button onClick={() => setDialogOpen(true)}><PlusIcon className="size-4" />New policy</Button> : undefined}
+          title={t("policies.noneFound")}
+          description={canWrite ? t("policies.noneFoundHint") : t("policies.noneMatch")}
+          action={
+            canWrite ? (
+              <Button onClick={() => setDialogOpen(true)}>
+                <PlusIcon className="size-4" />
+                {t("policies.newPolicy")}
+              </Button>
+            ) : undefined
+          }
         />
       ) : (
         <Card className="overflow-hidden p-0">
@@ -132,13 +143,13 @@ export default function PoliciesPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Scope</TableHead>
-                  <TableHead>State</TableHead>
-                  <TableHead className="text-right">Version</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Effective</TableHead>
+                  <TableHead>{t("policies.colName")}</TableHead>
+                  <TableHead>{t("policies.colType")}</TableHead>
+                  <TableHead>{t("policies.colScope")}</TableHead>
+                  <TableHead>{t("policies.colState")}</TableHead>
+                  <TableHead className="text-end">{t("policies.colVersion")}</TableHead>
+                  <TableHead>{t("policies.colStatus")}</TableHead>
+                  <TableHead>{t("policies.colEffective")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -149,12 +160,12 @@ export default function PoliciesPage() {
                     onClick={() => router.push(`/policies/${policy.policyId}`)}
                   >
                     <TableCell className="font-medium">{policy.name}</TableCell>
-                    <TableCell className="text-muted-foreground">{humanizePolicyType(policy.policyType)}</TableCell>
-                    <TableCell className="capitalize text-muted-foreground">{policy.scope}</TableCell>
+                    <TableCell className="text-muted-foreground">{t(`policyTypes.${policy.policyType}`)}</TableCell>
+                    <TableCell className="text-muted-foreground">{t(`policies.${policy.scope}`)}</TableCell>
                     <TableCell className="text-muted-foreground">{policy.jurisdiction?.state ?? "—"}</TableCell>
-                    <TableCell className="text-right tabular-nums">v{policy.version}</TableCell>
+                    <TableCell className="text-end tabular-nums">v{policy.version}</TableCell>
                     <TableCell>
-                      <StatusBadge tone={policyStatusTone(policy.status)}>{policy.status.replace(/_/g, " ")}</StatusBadge>
+                      <StatusBadge tone={policyStatusTone(policy.status)}>{t(`policyStatus.${policy.status}`)}</StatusBadge>
                     </TableCell>
                     <TableCell className="text-muted-foreground">{formatDate(policy.effectiveFrom)}</TableCell>
                   </TableRow>
@@ -167,15 +178,13 @@ export default function PoliciesPage() {
 
       {total > PAGE_SIZE ? (
         <div className="flex items-center justify-between text-sm text-muted-foreground">
-          <span>
-            Page {page} of {totalPages} · {total} total
-          </span>
+          <span>{t("common.pageOfTotal", { page, totalPages, total })}</span>
           <div className="flex gap-2">
             <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
-              Previous
+              {t("common.previous")}
             </Button>
             <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>
-              Next
+              {t("common.next")}
             </Button>
           </div>
         </div>

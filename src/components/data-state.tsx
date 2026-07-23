@@ -1,7 +1,10 @@
+"use client";
+
 import type { ReactNode } from "react";
 import { AlertCircleIcon, InboxIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ApiError } from "@/lib/api";
+import { useTranslation } from "@/lib/i18n/i18n";
 
 export function EmptyState({
   title,
@@ -27,13 +30,14 @@ export function EmptyState({
 }
 
 export function ErrorState({ error, onRetry }: { error: unknown; onRetry?: () => void }) {
-  const message = error instanceof ApiError ? error.message : error instanceof Error ? error.message : "Something went wrong";
+  const { t } = useTranslation();
+  const message = error instanceof ApiError ? error.message : error instanceof Error ? error.message : t("common.somethingWentWrong");
   const status = error instanceof ApiError ? error.status : undefined;
   return (
     <div className="flex flex-col items-center justify-center gap-3 rounded-lg border border-destructive/30 bg-destructive/5 p-10 text-center">
       <AlertCircleIcon className="size-8 text-destructive" />
       <div className="space-y-1">
-        <p className="font-medium text-destructive">Couldn&apos;t load this</p>
+        <p className="font-medium text-destructive">{t("common.couldntLoad")}</p>
         <p className="text-sm text-muted-foreground">
           {status ? `${status} · ` : ""}
           {message}
@@ -41,7 +45,7 @@ export function ErrorState({ error, onRetry }: { error: unknown; onRetry?: () =>
       </div>
       {onRetry ? (
         <Button variant="outline" size="sm" onClick={onRetry}>
-          Try again
+          {t("common.tryAgain")}
         </Button>
       ) : null}
     </div>

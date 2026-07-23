@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { NativeSelect } from "@/components/ui/native-select";
+import { Combobox, ComboboxItem } from "@/components/ui/combobox";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -23,7 +23,9 @@ import { policiesApi } from "@/lib/resources";
 import { queryKeys } from "@/lib/query-keys";
 import { usePolicyTypes, useClients } from "@/lib/hooks";
 import { useRole } from "@/lib/auth";
-import { formatDate, formatDateTime, humanizePolicyType, policyStatusTone } from "@/lib/format";
+import { useDateFormat } from "@/lib/date-format";
+import { useTranslation } from "@/lib/i18n/i18n";
+import { policyStatusTone } from "@/lib/format";
 import type { Policy } from "@/lib/types";
 
 function DetailRow({ label, children }: { label: string; children: React.ReactNode }) {
@@ -40,6 +42,8 @@ export default function PolicyDetailPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { canWrite, isPlatformAdmin, clientId: ownClientId } = useRole();
+  const { formatDate, formatDateTime } = useDateFormat();
+  const { t } = useTranslation();
   const policyTypes = usePolicyTypes();
   const clients = useClients();
 
@@ -64,29 +68,29 @@ export default function PolicyDetailPage() {
       toast.success(v.label);
       invalidate();
     },
-    onError: (error) => toast.error("Action failed", { description: humanizeError(error) }),
+    onError: (error) => toast.error(t("policies.actionFailed"), { description: humanizeError(error) }),
   });
 
   const rejectMutation = useMutation({
     mutationFn: () => policiesApi.reject(policyId, rejectReason || undefined),
     onSuccess: () => {
-      toast.success("Policy rejected");
+      toast.success(t("policies.toastRejected"));
       setRejectOpen(false);
       setRejectReason("");
       invalidate();
     },
-    onError: (error) => toast.error("Couldn't reject", { description: humanizeError(error) }),
+    onError: (error) => toast.error(t("policies.couldntReject"), { description: humanizeError(error) }),
   });
 
   const cloneMutation = useMutation({
     mutationFn: () => policiesApi.clone(policyId, cloneClientId),
     onSuccess: (created) => {
-      toast.success("Cloned into a client draft");
+      toast.success(t("policies.toastCloned"));
       setCloneOpen(false);
       queryClient.invalidateQueries({ queryKey: ["policies"] });
       router.push(`/policies/${created.policyId}`);
     },
-    onError: (error) => toast.error("Couldn't clone", { description: humanizeError(error) }),
+    onError: (error) => toast.error(t("policies.couldntClone"), { description: humanizeError(error) }),
   });
 
   if (policyQuery.isError) return <ErrorState error={policyQuery.error} onRetry={() => policyQuery.refetch()} />;
@@ -107,45 +111,45 @@ export default function PolicyDetailPage() {
   return (
     <>
       <Link href="/policies" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
-        <ArrowLeftIcon className="size-4" />
-        Back to policies
+        <ArrowLeftIcon className="size-4 rtl:rotate-180" />
+        {t("policies.backToPolicies")}
       </Link>
 
       <PageHeader
         title={policy.name}
-        description={`${humanizePolicyType(policy.policyType)} · ${policy.scope === "global" ? "Global" : "Client-specific"} · v${policy.version}`}
+        description={`${t(`policyTypes.${policy.policyType}`)} · ${policy.scope === "global" ? t("policies.globalStatutory") : t("policies.clientSpecific")} · v${policy.version}`}
         actions={
           <div className="flex flex-wrap items-center gap-2">
-            <StatusBadge tone={policyStatusTone(status)}>{status.replace(/_/g, " ")}</StatusBadge>
+            <StatusBadge tone={policyStatusTone(status)}>{t(`policyStatus.${status}`)}</StatusBadge>
             {canWrite && status === "draft" && policy.scope === "client" ? (
-              <Button size="sm" disabled={busy} onClick={() => action.mutate({ label: "Policy published", run: () => policiesApi.publish(policyId) })}>
-                Publish
+              <Button size="sm" disabled={busy} onClick={() => action.mutate({ label: t("policies.toastPublished"), run: () => policiesApi.publish(policyId) })}>
+                {t("common.publish")}
               </Button>
             ) : null}
             {canWrite && status === "draft" && policy.scope === "global" ? (
-              <Button size="sm" disabled={busy} onClick={() => action.mutate({ label: "Submitted for approval", run: () => policiesApi.submit(policyId) })}>
-                Submit for approval
+              <Button size="sm" disabled={busy} onClick={() => action.mutate({ label: t("policies.toastSubmitted"), run: () => policiesApi.submit(policyId) })}>
+                {t("policies.submitForApproval")}
               </Button>
             ) : null}
             {isPlatformAdmin && status === "pending_approval" ? (
               <>
-                <Button size="sm" disabled={busy} onClick={() => action.mutate({ label: "Policy approved", run: () => policiesApi.approve(policyId) })}>
-                  Approve
+                <Button size="sm" disabled={busy} onClick={() => action.mutate({ label: t("policies.toastApproved"), run: () => policiesApi.approve(policyId) })}>
+                  {t("common.approve")}
                 </Button>
                 <Button size="sm" variant="destructive" disabled={busy} onClick={() => setRejectOpen(true)}>
-                  Reject
+                  {t("common.reject")}
                 </Button>
               </>
             ) : null}
             {canWrite && (status === "draft" || status === "active") ? (
               <Button size="sm" variant="outline" onClick={() => setEditOpen(true)}>
                 <PencilIcon className="size-3.5" />
-                Edit
+                {t("common.edit")}
               </Button>
             ) : null}
             {canWrite && status === "active" ? (
-              <Button size="sm" variant="outline" disabled={busy} onClick={() => action.mutate({ label: "Policy archived", run: () => policiesApi.archive(policyId) })}>
-                Archive
+              <Button size="sm" variant="outline" disabled={busy} onClick={() => action.mutate({ label: t("policies.toastArchived"), run: () => policiesApi.archive(policyId) })}>
+                {t("common.archive")}
               </Button>
             ) : null}
             {canWrite ? (
@@ -158,7 +162,7 @@ export default function PolicyDetailPage() {
                 }}
               >
                 <CopyIcon className="size-3.5" />
-                Clone
+                {t("common.clone")}
               </Button>
             ) : null}
           </div>
@@ -168,21 +172,21 @@ export default function PolicyDetailPage() {
       <div className="grid gap-4 lg:grid-cols-3">
         <Card className="lg:col-span-1">
           <CardHeader>
-            <CardTitle className="text-base">Details</CardTitle>
+            <CardTitle className="text-base">{t("policies.details")}</CardTitle>
           </CardHeader>
           <CardContent>
             <dl className="grid grid-cols-2 gap-x-4 gap-y-3">
-              <DetailRow label="Policy type">{humanizePolicyType(policy.policyType)}</DetailRow>
-              <DetailRow label="Scope">{policy.scope === "global" ? "Global" : "Client"}</DetailRow>
-              <DetailRow label="Jurisdiction">{policy.jurisdiction?.state ?? "Federal"}</DetailRow>
-              <DetailRow label="Version">v{policy.version}</DetailRow>
-              <DetailRow label="Effective from">{formatDate(policy.effectiveFrom)}</DetailRow>
-              <DetailRow label="Effective to">{policy.effectiveTo ? formatDate(policy.effectiveTo) : "Open"}</DetailRow>
-              <DetailRow label="Created">{formatDateTime(policy.metadata?.createdAt)}</DetailRow>
-              <DetailRow label="Updated">{formatDateTime(policy.metadata?.updatedAt)}</DetailRow>
+              <DetailRow label={t("policies.policyType")}>{t(`policyTypes.${policy.policyType}`)}</DetailRow>
+              <DetailRow label={t("policies.scope")}>{policy.scope === "global" ? t("policies.global") : t("policies.client")}</DetailRow>
+              <DetailRow label={t("policies.jurisdiction")}>{policy.jurisdiction?.state ?? t("policies.federal")}</DetailRow>
+              <DetailRow label={t("common.version")}>v{policy.version}</DetailRow>
+              <DetailRow label={t("common.effectiveFrom")}>{formatDate(policy.effectiveFrom)}</DetailRow>
+              <DetailRow label={t("common.effectiveTo")}>{policy.effectiveTo ? formatDate(policy.effectiveTo) : "—"}</DetailRow>
+              <DetailRow label={t("common.createdAt")}>{formatDateTime(policy.metadata?.createdAt)}</DetailRow>
+              <DetailRow label={t("common.updatedAt")}>{formatDateTime(policy.metadata?.updatedAt)}</DetailRow>
               {policy.metadata?.rejectionReason ? (
                 <div className="col-span-2">
-                  <DetailRow label="Rejection reason">
+                  <DetailRow label={t("policies.rejectionReason")}>
                     <span className="text-destructive">{policy.metadata.rejectionReason}</span>
                   </DetailRow>
                 </div>
@@ -194,7 +198,7 @@ export default function PolicyDetailPage() {
 
         <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle className="text-base">Rules</CardTitle>
+            <CardTitle className="text-base">{t("policies.rulesSectionTitle")}</CardTitle>
           </CardHeader>
           <CardContent>
             <RulesView value={policy.rules} />
@@ -204,35 +208,35 @@ export default function PolicyDetailPage() {
 
       <Card className="overflow-hidden p-0">
         <CardHeader className="p-4">
-          <CardTitle className="text-base">Version history</CardTitle>
+          <CardTitle className="text-base">{t("policies.versionHistory")}</CardTitle>
         </CardHeader>
         <div className="overflow-x-auto border-t">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="text-right">Version</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Effective from</TableHead>
-                <TableHead>Effective to</TableHead>
-                <TableHead>Updated</TableHead>
+                <TableHead className="text-end">{t("common.version")}</TableHead>
+                <TableHead>{t("common.status")}</TableHead>
+                <TableHead>{t("common.effectiveFrom")}</TableHead>
+                <TableHead>{t("common.effectiveTo")}</TableHead>
+                <TableHead>{t("common.updatedAt")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {versions.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={5} className="text-center text-muted-foreground">
-                    {versionsQuery.isLoading ? "Loading…" : "No versions"}
+                    {versionsQuery.isLoading ? t("common.loading") : t("policies.noVersions")}
                   </TableCell>
                 </TableRow>
               ) : (
                 versions.map((v) => (
                   <TableRow key={v._id}>
-                    <TableCell className="text-right tabular-nums">v{v.version}</TableCell>
+                    <TableCell className="text-end tabular-nums">v{v.version}</TableCell>
                     <TableCell>
-                      <StatusBadge tone={policyStatusTone(v.status)}>{v.status.replace(/_/g, " ")}</StatusBadge>
+                      <StatusBadge tone={policyStatusTone(v.status)}>{t(`policyStatus.${v.status}`)}</StatusBadge>
                     </TableCell>
                     <TableCell className="text-muted-foreground">{formatDate(v.effectiveFrom)}</TableCell>
-                    <TableCell className="text-muted-foreground">{v.effectiveTo ? formatDate(v.effectiveTo) : "Open"}</TableCell>
+                    <TableCell className="text-muted-foreground">{v.effectiveTo ? formatDate(v.effectiveTo) : "—"}</TableCell>
                     <TableCell className="text-muted-foreground">{formatDateTime(v.metadata?.updatedAt)}</TableCell>
                   </TableRow>
                 ))
@@ -247,14 +251,14 @@ export default function PolicyDetailPage() {
       <Dialog open={rejectOpen} onOpenChange={setRejectOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Reject policy</DialogTitle>
-            <DialogDescription>Send it back to draft. Add an optional reason for the author.</DialogDescription>
+            <DialogTitle>{t("policies.rejectPolicy")}</DialogTitle>
+            <DialogDescription>{t("policies.rejectDescription")}</DialogDescription>
           </DialogHeader>
-          <Textarea value={rejectReason} onChange={(e) => setRejectReason(e.target.value)} placeholder="Reason (optional)" rows={3} />
+          <Textarea value={rejectReason} onChange={(e) => setRejectReason(e.target.value)} placeholder={t("policies.reasonOptional")} rows={3} />
           <DialogFooter>
             <Button variant="destructive" disabled={rejectMutation.isPending} onClick={() => rejectMutation.mutate()}>
               {rejectMutation.isPending ? <Loader2Icon className="size-4 animate-spin" /> : null}
-              Reject
+              {t("common.reject")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -263,30 +267,27 @@ export default function PolicyDetailPage() {
       <Dialog open={cloneOpen} onOpenChange={setCloneOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Clone into a client policy</DialogTitle>
-            <DialogDescription>Creates a client-owned draft copy you can customize independently.</DialogDescription>
+            <DialogTitle>{t("policies.cloneIntoClient")}</DialogTitle>
+            <DialogDescription>{t("policies.cloneDescription")}</DialogDescription>
           </DialogHeader>
           {isPlatformAdmin ? (
             <div className="space-y-1.5">
-              <Label htmlFor="cloneClient">Target client</Label>
-              <NativeSelect id="cloneClient" value={cloneClientId} onChange={(e) => setCloneClientId(e.target.value)}>
-                <option value="" disabled>
-                  Select a client…
-                </option>
+              <Label htmlFor="cloneClient">{t("policies.targetClient")}</Label>
+              <Combobox id="cloneClient" value={cloneClientId} onValueChange={setCloneClientId} placeholder={t("policies.selectClient")}>
                 {clients.data?.items.map((c) => (
-                  <option key={c._id} value={c._id}>
+                  <ComboboxItem key={c._id} value={c._id}>
                     {c.name}
-                  </option>
+                  </ComboboxItem>
                 ))}
-              </NativeSelect>
+              </Combobox>
             </div>
           ) : (
-            <p className="text-sm text-muted-foreground">This will be cloned into your client.</p>
+            <p className="text-sm text-muted-foreground">{t("policies.clonedIntoYourClient")}</p>
           )}
           <DialogFooter>
             <Button disabled={cloneMutation.isPending || !cloneClientId} onClick={() => cloneMutation.mutate()}>
               {cloneMutation.isPending ? <Loader2Icon className="size-4 animate-spin" /> : null}
-              Clone
+              {t("common.clone")}
             </Button>
           </DialogFooter>
         </DialogContent>

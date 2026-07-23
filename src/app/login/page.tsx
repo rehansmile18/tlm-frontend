@@ -9,10 +9,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/lib/auth";
+import { useTranslation } from "@/lib/i18n/i18n";
 import { humanizeError } from "@/components/data-state";
+import { LanguageSwitcher } from "@/components/app-shell/language-switcher";
 
 export default function LoginPage() {
   const { login, isAuthenticated, isReady } = useAuth();
+  const { t } = useTranslation();
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -27,37 +30,40 @@ export default function LoginPage() {
     setSubmitting(true);
     try {
       await login(email.trim(), password);
-      toast.success("Signed in");
+      toast.success(t("auth.signedIn"));
       router.replace("/dashboard");
     } catch (error) {
-      toast.error("Sign in failed", { description: humanizeError(error) });
+      toast.error(t("auth.signInFailed"), { description: humanizeError(error) });
     } finally {
       setSubmitting(false);
     }
   }
 
   return (
-    <div className="flex min-h-dvh items-center justify-center bg-muted/40 p-4">
+    <div className="relative flex min-h-dvh items-center justify-center bg-muted/40 p-4">
+      <div className="absolute end-4 top-4">
+        <LanguageSwitcher />
+      </div>
       <div className="w-full max-w-sm space-y-6">
         <div className="flex flex-col items-center gap-3 text-center">
           <span className="flex size-11 items-center justify-center rounded-xl bg-primary text-primary-foreground">
             <ShieldCheckIcon className="size-6" />
           </span>
           <div>
-            <h1 className="text-lg font-semibold">TLM Rule Repository</h1>
-            <p className="text-sm text-muted-foreground">Sign in to manage compliance policies</p>
+            <h1 className="text-lg font-semibold">{t("auth.title")}</h1>
+            <p className="text-sm text-muted-foreground">{t("auth.subtitle")}</p>
           </div>
         </div>
 
         <Card>
           <CardHeader>
-            <CardTitle>Sign in</CardTitle>
-            <CardDescription>Use your platform or client admin credentials.</CardDescription>
+            <CardTitle>{t("auth.signIn")}</CardTitle>
+            <CardDescription>{t("auth.signInDescription")}</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">{t("auth.email")}</Label>
                 <Input
                   id="email"
                   type="email"
@@ -69,7 +75,7 @@ export default function LoginPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password">{t("auth.password")}</Label>
                 <Input
                   id="password"
                   type="password"
@@ -82,14 +88,14 @@ export default function LoginPage() {
               </div>
               <Button type="submit" className="w-full" disabled={submitting}>
                 {submitting ? <Loader2Icon className="size-4 animate-spin" /> : null}
-                Sign in
+                {t("auth.signIn")}
               </Button>
             </form>
           </CardContent>
         </Card>
 
         <p className="text-center text-xs text-muted-foreground">
-          Backend API:{" "}
+          {t("auth.backendApi")}{" "}
           <code className="rounded bg-muted px-1 py-0.5">{process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:4000/api/v1"}</code>
         </p>
       </div>

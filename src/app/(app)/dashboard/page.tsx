@@ -10,7 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { assignmentsApi, clientsApi, policiesApi, ruleGroupsApi } from "@/lib/resources";
 import { queryKeys } from "@/lib/query-keys";
 import { useAuth, useRole } from "@/lib/auth";
-import { humanizeRole } from "@/lib/format";
+import { useTranslation } from "@/lib/i18n/i18n";
 
 function StatCard({
   label,
@@ -47,27 +47,30 @@ function StatCard({
 export default function DashboardPage() {
   const { user } = useAuth();
   const { isPlatformAdmin } = useRole();
+  const { t } = useTranslation();
 
   const policies = useQuery({ queryKey: queryKeys.policies({ pageSize: 1 }), queryFn: () => policiesApi.list({ pageSize: 1 }) });
   const ruleGroups = useQuery({ queryKey: queryKeys.ruleGroups({ pageSize: 1 }), queryFn: () => ruleGroupsApi.list({ pageSize: 1 }) });
   const assignments = useQuery({ queryKey: queryKeys.assignments({ pageSize: 1 }), queryFn: () => assignmentsApi.list({ pageSize: 1 }) });
   const clients = useQuery({ queryKey: queryKeys.clients, queryFn: () => clientsApi.list(), enabled: isPlatformAdmin });
 
+  const title = user ? `${t("dashboard.welcomeBack")}, ${user.email.split("@")[0]}` : t("dashboard.welcomeBack");
+  const description = user
+    ? `${t("dashboard.signedInAs")} ${t(`roles.${user.role}`)}${user.clientId ? "" : ` · ${t("dashboard.allClients")}`}`
+    : undefined;
+
   return (
     <>
-      <PageHeader
-        title={`Welcome back${user ? `, ${user.email.split("@")[0]}` : ""}`}
-        description={user ? `Signed in as ${humanizeRole(user.role)}${user.clientId ? "" : " · all clients"}` : undefined}
-      />
+      <PageHeader title={title} description={description} />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Policies" href="/policies" loading={policies.isLoading} value={policies.data?.total} icon={<FileTextIcon className="size-4" />} />
-        <StatCard label="Rule Groups" href="/rule-groups" loading={ruleGroups.isLoading} value={ruleGroups.data?.total} icon={<Layers3Icon className="size-4" />} />
-        <StatCard label="Assignments" href="/assignments" loading={assignments.isLoading} value={assignments.data?.total} icon={<TargetIcon className="size-4" />} />
+        <StatCard label={t("dashboard.policiesLabel")} href="/policies" loading={policies.isLoading} value={policies.data?.total} icon={<FileTextIcon className="size-4" />} />
+        <StatCard label={t("dashboard.ruleGroupsLabel")} href="/rule-groups" loading={ruleGroups.isLoading} value={ruleGroups.data?.total} icon={<Layers3Icon className="size-4" />} />
+        <StatCard label={t("dashboard.assignmentsLabel")} href="/assignments" loading={assignments.isLoading} value={assignments.data?.total} icon={<TargetIcon className="size-4" />} />
         {isPlatformAdmin ? (
-          <StatCard label="Clients" href="/clients" loading={clients.isLoading} value={clients.data?.items.length} icon={<Building2Icon className="size-4" />} />
+          <StatCard label={t("dashboard.clientsLabel")} href="/clients" loading={clients.isLoading} value={clients.data?.items.length} icon={<Building2Icon className="size-4" />} />
         ) : (
-          <StatCard label="Rule sets" href="/rule-groups" loading={ruleGroups.isLoading} value={ruleGroups.data?.total} icon={<Layers3Icon className="size-4" />} />
+          <StatCard label={t("dashboard.ruleSetsLabel")} href="/rule-groups" loading={ruleGroups.isLoading} value={ruleGroups.data?.total} icon={<Layers3Icon className="size-4" />} />
         )}
       </div>
 
@@ -76,16 +79,13 @@ export default function DashboardPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <ShieldCheckIcon className="size-4 text-primary" />
-              Resolve rules for a worker
+              {t("dashboard.resolveTitle")}
             </CardTitle>
-            <CardDescription>
-              The payoff query: pick an employee, date, and location, and see the exact rule group and expanded
-              policies that applied.
-            </CardDescription>
+            <CardDescription>{t("dashboard.resolveDescription")}</CardDescription>
           </CardHeader>
           <CardContent>
             <Button nativeButton={false} render={<Link href="/resolve" />}>
-              Open resolver
+              {t("dashboard.openResolver")}
               <ArrowRightIcon className="size-4" />
             </Button>
           </CardContent>
@@ -95,16 +95,13 @@ export default function DashboardPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <FileTextIcon className="size-4 text-primary" />
-              Author a policy
+              {t("dashboard.authorTitle")}
             </CardTitle>
-            <CardDescription>
-              Create global (statutory) or client-specific policies with effective-dated versioning and a
-              maker-checker approval trail.
-            </CardDescription>
+            <CardDescription>{t("dashboard.authorDescription")}</CardDescription>
           </CardHeader>
           <CardContent>
             <Button variant="outline" nativeButton={false} render={<Link href="/policies" />}>
-              Go to policies
+              {t("dashboard.goToPolicies")}
               <ArrowRightIcon className="size-4" />
             </Button>
           </CardContent>

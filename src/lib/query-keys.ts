@@ -9,6 +9,9 @@ export const queryKeys = {
   assignments: (params?: unknown) => ["assignments", params ?? {}] as const,
   assignment: (id: string) => ["assignment", id] as const,
   clients: ["clients"] as const,
+  myClient: ["clients", "me"] as const,
   users: (params?: unknown) => ["users", params ?? {}] as const,
   auditLogs: (params?: unknown) => ["audit-logs", params ?? {}] as const,
+  countries: ["geo", "countries"] as const,
+  states: (countryCode: string) => ["geo", "states", countryCode] as const,
 };

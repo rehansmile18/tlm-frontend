@@ -5,7 +5,7 @@ import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { PageHeader } from "@/components/page-header";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { NativeSelect } from "@/components/ui/native-select";
+import { Combobox, ComboboxItem } from "@/components/ui/combobox";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState, ErrorState } from "@/components/data-state";
@@ -14,12 +14,21 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { auditLogsApi } from "@/lib/resources";
 import { queryKeys } from "@/lib/query-keys";
-import { formatDateTime } from "@/lib/format";
+import { useDateFormat } from "@/lib/date-format";
+import { useTranslation } from "@/lib/i18n/i18n";
 import type { AuditLog } from "@/lib/types";
 
 const PAGE_SIZE = 30;
 
+const ENTITY_LABEL_KEY = {
+  policy: "auditLogs.policy",
+  ruleGroup: "auditLogs.ruleGroup",
+  assignment: "auditLogs.assignment",
+} as const;
+
 export default function AuditLogsPage() {
+  const { formatDateTime } = useDateFormat();
+  const { t } = useTranslation();
   const [entityType, setEntityType] = useState("");
   const [entityId, setEntityId] = useState("");
   const [page, setPage] = useState(1);
@@ -38,25 +47,25 @@ export default function AuditLogsPage() {
 
   return (
     <>
-      <PageHeader title="Audit logs" description="Append-only trail of policy, rule-group, and assignment changes across all clients." />
+      <PageHeader title={t("auditLogs.title")} description={t("auditLogs.description")} />
 
       <Card className="p-4">
         <div className="grid gap-3 sm:grid-cols-[12rem_1fr]">
-          <NativeSelect
-            aria-label="Filter by entity type"
+          <Combobox
+            aria-label={t("auditLogs.filterByEntityType")}
             value={entityType}
-            onChange={(e) => {
-              setEntityType(e.target.value);
+            onValueChange={(value) => {
+              setEntityType(value);
               setPage(1);
             }}
           >
-            <option value="">All entities</option>
-            <option value="policy">Policy</option>
-            <option value="ruleGroup">Rule group</option>
-            <option value="assignment">Assignment</option>
-          </NativeSelect>
+            <ComboboxItem value="">{t("auditLogs.allEntities")}</ComboboxItem>
+            <ComboboxItem value="policy">{t("auditLogs.policy")}</ComboboxItem>
+            <ComboboxItem value="ruleGroup">{t("auditLogs.ruleGroup")}</ComboboxItem>
+            <ComboboxItem value="assignment">{t("auditLogs.assignment")}</ComboboxItem>
+          </Combobox>
           <Input
-            placeholder="Filter by entity ID"
+            placeholder={t("auditLogs.filterByEntityId")}
             value={entityId}
             onChange={(e) => {
               setEntityId(e.target.value);
@@ -75,24 +84,24 @@ export default function AuditLogsPage() {
           ))}
         </div>
       ) : items.length === 0 ? (
-        <EmptyState title="No audit entries" description="Nothing matches these filters." />
+        <EmptyState title={t("auditLogs.noneFound")} description={t("auditLogs.noneMatch")} />
       ) : (
         <Card className="overflow-hidden p-0">
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>When</TableHead>
-                  <TableHead>Entity</TableHead>
-                  <TableHead>Action</TableHead>
-                  <TableHead>Entity ID</TableHead>
+                  <TableHead>{t("auditLogs.colWhen")}</TableHead>
+                  <TableHead>{t("auditLogs.colEntity")}</TableHead>
+                  <TableHead>{t("auditLogs.colAction")}</TableHead>
+                  <TableHead>{t("auditLogs.colEntityId")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {items.map((log) => (
                   <TableRow key={log._id} className="cursor-pointer" onClick={() => setSelected(log)}>
                     <TableCell className="text-muted-foreground">{formatDateTime(log.timestamp)}</TableCell>
-                    <TableCell className="capitalize">{log.entityType}</TableCell>
+                    <TableCell className="capitalize">{t(ENTITY_LABEL_KEY[log.entityType])}</TableCell>
                     <TableCell>
                       <StatusBadge tone="info">{log.action}</StatusBadge>
                     </TableCell>
@@ -107,37 +116,35 @@ export default function AuditLogsPage() {
 
       {total > PAGE_SIZE ? (
         <div className="flex items-center justify-between text-sm text-muted-foreground">
-          <span>
-            Page {page} of {totalPages} · {total} total
-          </span>
+          <span>{t("common.pageOfTotal", { page, totalPages, total })}</span>
           <div className="flex gap-2">
             <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
-              Previous
+              {t("common.previous")}
             </Button>
             <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>
-              Next
+              {t("common.next")}
             </Button>
           </div>
         </div>
       ) : null}
 
       <Dialog open={Boolean(selected)} onOpenChange={(open) => !open && setSelected(null)}>
-        <DialogContent className="sm:max-w-2xl">
+        <DialogContent className="sm:max-w-3xl">
           <DialogHeader>
             <DialogTitle className="capitalize">
-              {selected?.action} · {selected?.entityType}
+              {selected?.action} · {selected ? t(ENTITY_LABEL_KEY[selected.entityType]) : ""}
             </DialogTitle>
             <DialogDescription>{selected ? formatDateTime(selected.timestamp) : ""}</DialogDescription>
           </DialogHeader>
           <div className="grid gap-3 md:grid-cols-2">
             <div className="space-y-1">
-              <p className="text-xs font-medium text-muted-foreground">Before</p>
+              <p className="text-xs font-medium text-muted-foreground">{t("auditLogs.before")}</p>
               <pre className="max-h-72 overflow-auto rounded-md border bg-muted/40 p-2 text-xs">
                 {selected?.before ? JSON.stringify(selected.before, null, 2) : "—"}
               </pre>
             </div>
             <div className="space-y-1">
-              <p className="text-xs font-medium text-muted-foreground">After</p>
+              <p className="text-xs font-medium text-muted-foreground">{t("auditLogs.after")}</p>
               <pre className="max-h-72 overflow-auto rounded-md border bg-muted/40 p-2 text-xs">
                 {selected?.after ? JSON.stringify(selected.after, null, 2) : "—"}
               </pre>

@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { NativeSelect } from "@/components/ui/native-select";
+import { Combobox, ComboboxItem } from "@/components/ui/combobox";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState, ErrorState, humanizeError } from "@/components/data-state";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -18,11 +18,12 @@ import { usersApi, type CreateUserBody } from "@/lib/resources";
 import { queryKeys } from "@/lib/query-keys";
 import { useClients } from "@/lib/hooks";
 import { useRole } from "@/lib/auth";
-import { humanizeRole } from "@/lib/format";
+import { useTranslation } from "@/lib/i18n/i18n";
 import type { UserRole } from "@/lib/types";
 
 function CreateUserDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
   const { isPlatformAdmin, clientId: ownClientId } = useRole();
+  const { t } = useTranslation();
   const clients = useClients();
   const queryClient = useQueryClient();
 
@@ -46,69 +47,66 @@ function CreateUserDialog({ open, onOpenChange }: { open: boolean; onOpenChange:
       return usersApi.create(body);
     },
     onSuccess: () => {
-      toast.success("User created");
+      toast.success(t("users.toastCreated"));
       queryClient.invalidateQueries({ queryKey: ["users"] });
       onOpenChange(false);
       setEmail("");
       setPassword("");
     },
-    onError: (error) => toast.error("Couldn't create user", { description: humanizeError(error) }),
+    onError: (error) => toast.error(t("users.couldntCreate"), { description: humanizeError(error) }),
   });
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>New user</DialogTitle>
-          <DialogDescription>Create an account and assign a role.</DialogDescription>
+          <DialogTitle>{t("users.newDialogTitle")}</DialogTitle>
+          <DialogDescription>{t("users.newDialogDescription")}</DialogDescription>
         </DialogHeader>
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            if (!email.trim()) return toast.error("Email is required");
-            if (password.length < 8) return toast.error("Password must be at least 8 characters");
-            if (needsClient && !clientId) return toast.error("Select a client");
+            if (!email.trim()) return toast.error(t("users.emailRequired"));
+            if (password.length < 8) return toast.error(t("users.passwordMinLength"));
+            if (needsClient && !clientId) return toast.error(t("common.selectClient"));
             mutation.mutate();
           }}
           className="space-y-4"
         >
           <div className="space-y-1.5">
-            <Label htmlFor="userEmail">Email</Label>
+            <Label htmlFor="userEmail">{t("users.email")}</Label>
             <Input id="userEmail" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="userPassword">Password</Label>
-            <Input id="userPassword" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="At least 8 characters" />
+            <Label htmlFor="userPassword">{t("users.password")}</Label>
+            <Input id="userPassword" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder={t("users.passwordHint")} />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="userRole">Role</Label>
-            <NativeSelect id="userRole" value={role} onChange={(e) => setRole(e.target.value as UserRole)}>
+            <Label htmlFor="userRole">{t("users.role")}</Label>
+            <Combobox id="userRole" value={role} onValueChange={(v) => setRole(v as UserRole)}>
               {roleOptions.map((r) => (
-                <option key={r} value={r}>
-                  {humanizeRole(r)}
-                </option>
+                <ComboboxItem key={r} value={r}>
+                  {t(`roles.${r}`)}
+                </ComboboxItem>
               ))}
-            </NativeSelect>
+            </Combobox>
           </div>
           {needsClient && isPlatformAdmin ? (
             <div className="space-y-1.5">
-              <Label htmlFor="userClient">Client</Label>
-              <NativeSelect id="userClient" value={clientId} onChange={(e) => setClientId(e.target.value)}>
-                <option value="" disabled>
-                  Select a client…
-                </option>
+              <Label htmlFor="userClient">{t("users.client")}</Label>
+              <Combobox id="userClient" value={clientId} onValueChange={setClientId} placeholder={t("users.selectClient")}>
                 {clients.data?.items.map((c) => (
-                  <option key={c._id} value={c._id}>
+                  <ComboboxItem key={c._id} value={c._id}>
                     {c.name}
-                  </option>
+                  </ComboboxItem>
                 ))}
-              </NativeSelect>
+              </Combobox>
             </div>
           ) : null}
           <DialogFooter>
             <Button type="submit" disabled={mutation.isPending}>
               {mutation.isPending ? <Loader2Icon className="size-4 animate-spin" /> : null}
-              Create user
+              {t("users.createUser")}
             </Button>
           </DialogFooter>
         </form>
@@ -120,6 +118,7 @@ function CreateUserDialog({ open, onOpenChange }: { open: boolean; onOpenChange:
 export default function UsersPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const clients = useClients();
+  const { t } = useTranslation();
   const query = useQuery({ queryKey: queryKeys.users({ pageSize: 200 }), queryFn: () => usersApi.list({ pageSize: 200 }) });
 
   const clientName = useMemo(() => {
@@ -133,12 +132,12 @@ export default function UsersPage() {
   return (
     <>
       <PageHeader
-        title="Users"
-        description="Accounts with access to the rule repository, scoped by role and client."
+        title={t("users.title")}
+        description={t("users.description")}
         actions={
           <Button onClick={() => setDialogOpen(true)}>
             <PlusIcon className="size-4" />
-            New user
+            {t("users.newUser")}
           </Button>
         }
       />
@@ -152,26 +151,28 @@ export default function UsersPage() {
           ))}
         </div>
       ) : items.length === 0 ? (
-        <EmptyState title="No users found" />
+        <EmptyState title={t("users.noneFound")} />
       ) : (
         <Card className="overflow-hidden p-0">
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead>Client</TableHead>
-                  <TableHead>Status</TableHead>
+                  <TableHead>{t("users.colEmail")}</TableHead>
+                  <TableHead>{t("users.colRole")}</TableHead>
+                  <TableHead>{t("users.colClient")}</TableHead>
+                  <TableHead>{t("users.colStatus")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {items.map((u) => (
                   <TableRow key={u._id ?? u.email}>
                     <TableCell className="font-medium">{u.email}</TableCell>
-                    <TableCell className="text-muted-foreground">{humanizeRole(u.role)}</TableCell>
-                    <TableCell className="text-muted-foreground">{u.clientId ? clientName.get(u.clientId) ?? "—" : "All (platform)"}</TableCell>
-                    <TableCell className="capitalize text-muted-foreground">{u.status ?? "active"}</TableCell>
+                    <TableCell className="text-muted-foreground">{t(`roles.${u.role}`)}</TableCell>
+                    <TableCell className="text-muted-foreground">{u.clientId ? clientName.get(u.clientId) ?? "—" : t("users.allPlatform")}</TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {u.status === "disabled" ? t("userStatus.disabled") : t("userStatus.active")}
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>

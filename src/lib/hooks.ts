@@ -1,9 +1,9 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { clientsApi, policiesApi } from "./resources";
+import { clientsApi, geoApi, policiesApi } from "./resources";
 import { queryKeys } from "./query-keys";
-import { useRole } from "./auth";
+import { useAuth, useRole } from "./auth";
 
 /** Policy-type registry + per-type JSON rules schema (drives the dynamic policy form). */
 export function usePolicyTypes() {
@@ -25,5 +25,35 @@ export function useClients() {
     queryFn: () => clientsApi.list(),
     enabled: isPlatformAdmin,
     staleTime: 60 * 1000,
+  });
+}
+
+/** The caller's own client (null for PLATFORM_ADMIN, who spans all clients). Drives the app-wide date format. */
+export function useMyClient() {
+  const { isAuthenticated } = useAuth();
+  return useQuery({
+    queryKey: queryKeys.myClient,
+    queryFn: () => clientsApi.getMine(),
+    enabled: isAuthenticated,
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+/** Full country list for a client's country picker. */
+export function useCountries() {
+  return useQuery({
+    queryKey: queryKeys.countries,
+    queryFn: () => geoApi.listCountries(),
+    staleTime: Infinity,
+  });
+}
+
+/** States/provinces for a given ISO country code — disabled until a real country is selected. */
+export function useStatesForCountry(countryCode: string | null | undefined) {
+  return useQuery({
+    queryKey: queryKeys.states(countryCode ?? ""),
+    queryFn: () => geoApi.listStates(countryCode as string),
+    enabled: Boolean(countryCode),
+    staleTime: Infinity,
   });
 }
