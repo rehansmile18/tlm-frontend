@@ -9,6 +9,7 @@ import type {
   GeoCountry,
   GeoState,
   LoginResponse,
+  ModuleLabelOverrides,
   Paginated,
   Policy,
   PolicyRef,
@@ -169,6 +170,12 @@ export const clientsApi = {
   list: () => apiFetch<{ items: Client[] }>("/clients"),
   create: (body: CreateClientBody) => apiFetch<Client>("/clients", { method: "POST", body }),
   getMine: () => apiFetch<{ client: Client | null }>("/clients/me"),
+  // Self-service — CLIENT_ADMIN customizing their own client's module labels.
+  updateMine: (body: { moduleLabels: ModuleLabelOverrides | null }) =>
+    apiFetch<Client>("/clients/me", { method: "PATCH", body }),
+  // PLATFORM_ADMIN has no client of their own, so `updateMine` doesn't apply to them.
+  update: (id: string, body: { moduleLabels: ModuleLabelOverrides | null }) =>
+    apiFetch<Client>(`/clients/${id}`, { method: "PATCH", body }),
 };
 
 // ---- Geo (countries / states reference data) ----

@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { act, render, screen } from "@testing-library/react";
-import { I18nProvider, useTranslation } from "../i18n";
+import { I18nProvider, setModuleLabelsSnapshot, useTranslation } from "../i18n";
 
 function Probe() {
   const { locale, dir, t, setLocale, tOptional } = useTranslation();
@@ -9,6 +9,8 @@ function Probe() {
       <span data-testid="locale">{locale}</span>
       <span data-testid="dir">{dir}</span>
       <span data-testid="nav-dashboard">{t("nav.dashboard")}</span>
+      <span data-testid="nav-policies">{t("nav.policies")}</span>
+      <span data-testid="policies-none-found">{t("policies.noneFound")}</span>
       <span data-testid="page-of-total">{t("common.pageOfTotal", { page: 2, totalPages: 5, total: 42 })}</span>
       <span data-testid="unknown-key">{tOptional("ruleFields.notARealField") ?? "MISS"}</span>
       <button onClick={() => setLocale("ar")}>go-arabic</button>
@@ -21,6 +23,7 @@ function Probe() {
 describe("I18nProvider / useTranslation", () => {
   afterEach(() => {
     localStorage.clear();
+    setModuleLabelsSnapshot(null);
     document.documentElement.removeAttribute("dir");
     document.documentElement.removeAttribute("lang");
   });
@@ -85,5 +88,40 @@ describe("I18nProvider / useTranslation", () => {
 
     expect(screen.getByTestId("dir")).toHaveTextContent("ltr");
     expect(screen.getByTestId("nav-dashboard")).toHaveTextContent("Panel");
+  });
+
+  describe("client module-label overrides", () => {
+    it("substitutes the client's custom module name into every string in that module's namespace, leaving other keys untouched", () => {
+      setModuleLabelsSnapshot({
+        policies: {
+          en: { singular: "Guideline", plural: "Guidelines" },
+          es: { singular: "Directriz", plural: "Directrices" },
+          ar: { singular: "إرشاد", plural: "إرشادات" },
+        },
+      });
+
+      render(
+        <I18nProvider>
+          <Probe />
+        </I18nProvider>
+      );
+
+      expect(screen.getByTestId("nav-policies")).toHaveTextContent("Guidelines");
+      expect(screen.getByTestId("policies-none-found")).toHaveTextContent("No Guidelines found");
+      // Unrelated module's strings are untouched.
+      expect(screen.getByTestId("nav-dashboard")).toHaveTextContent("Dashboard");
+    });
+
+    it("falls back to the built-in name when there is no override", () => {
+      setModuleLabelsSnapshot(null);
+
+      render(
+        <I18nProvider>
+          <Probe />
+        </I18nProvider>
+      );
+
+      expect(screen.getByTestId("nav-policies")).toHaveTextContent("Policies");
+    });
   });
 });

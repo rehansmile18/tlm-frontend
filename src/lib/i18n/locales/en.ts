@@ -75,6 +75,7 @@ const en = {
     backendApi: "Backend API:",
   },
   dashboard: {
+    moduleName: "Dashboard",
     welcomeBack: "Welcome back",
     signedInAs: "Signed in as",
     allClients: "all clients",
@@ -93,6 +94,7 @@ const en = {
     goToPolicies: "Go to policies",
   },
   policies: {
+    moduleName: "Policy",
     title: "Policies",
     description: "Global (statutory) and client-specific compliance policies, effective-dated and versioned.",
     newPolicy: "New policy",
@@ -159,6 +161,7 @@ const en = {
     couldntCreatePolicy: "Couldn't create policy",
   },
   ruleGroups: {
+    moduleName: "Rule Group",
     title: "Rule Groups",
     description: "Named bundles of policies a client assigns to a workforce population.",
     newRuleGroup: "New rule group",
@@ -208,6 +211,7 @@ const en = {
     versionNumber: "Version number",
   },
   assignments: {
+    moduleName: "Assignment",
     title: "Assignments",
     description: "Bindings of rule groups to employee, paygroup, location, department, or state populations.",
     newAssignment: "New assignment",
@@ -260,6 +264,7 @@ const en = {
     open: "Open",
   },
   resolve: {
+    moduleName: "Resolve",
     title: "Resolve rules",
     description: "Answer “which rules apply to this worker on this date?” — the core read the timesheet/pay engine consumes.",
     queryTitle: "Query",
@@ -287,6 +292,7 @@ const en = {
     priority: "priority",
   },
   clients: {
+    moduleName: "Client",
     title: "Clients",
     description: "Tenants of the rule repository. Each owns its policies, rule groups, and assignments.",
     newClient: "New client",
@@ -324,6 +330,7 @@ const en = {
     disabled: "disabled",
   },
   users: {
+    moduleName: "User",
     title: "Users",
     description: "Accounts with access to the rule repository, scoped by role and client.",
     newUser: "New user",
@@ -348,6 +355,7 @@ const en = {
     passwordMinLength: "Password must be at least 8 characters",
   },
   profile: {
+    moduleName: "Profile",
     title: "My profile",
     description: "Your account details, display preferences, and password.",
     photoTitle: "Photo",
@@ -393,6 +401,7 @@ const en = {
     newPasswordMinLength: "New password must be at least 8 characters",
   },
   auditLogs: {
+    moduleName: "Audit Log",
     title: "Audit logs",
     description: "Append-only trail of policy, rule-group, and assignment changes across all clients.",
     filterByEntityType: "Filter by entity type",
@@ -524,6 +533,24 @@ const en = {
     monthly: "Monthly",
     percent: "Percent",
     flat: "Flat",
+  },
+  moduleNames: {
+    title: "Customize module names",
+    description:
+      "Rename any module for everyone in your organization — e.g. rename \"Policies\" to \"Guidelines\". Provide the name in all three languages so nothing reads as a mix of languages.",
+    profileLinkTitle: "Customize module names",
+    profileLinkDescription: "Rename modules like Policies or Rule Groups for your whole organization.",
+    backToProfile: "Back to profile",
+    singular: "Singular",
+    plural: "Plural",
+    resetToDefault: "Reset to default",
+    selectClient: "Client",
+    selectClientPlaceholder: "Select a client…",
+    noClientSelected: "Select a client to customize its module names.",
+    saved: "Module names saved",
+    couldntSave: "Couldn't save module names",
+    couldntLoadClients: "Couldn't load clients",
+    fieldRequired: "Every field is required",
   },
 };
 

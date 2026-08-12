@@ -1,8 +1,9 @@
 "use client";
 
 import { useRef, useState } from "react";
+import Link from "next/link";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Loader2Icon } from "lucide-react";
+import { ChevronRightIcon, Loader2Icon } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -25,6 +26,7 @@ import { CALENDAR_FORMATS, type CalendarFormat, type PreferredLanguage, type Use
 
 export default function ProfilePage() {
   const { t } = useTranslation();
+  const { isClientAdmin, isPlatformAdmin } = useRole();
   const profile = useMyProfile();
 
   return (
@@ -41,6 +43,21 @@ export default function ProfilePage() {
           <PreferencesCard key={profile.dataUpdatedAt} profile={profile.data} />
           <PasswordCard />
         </>
+      ) : null}
+      {/* Module-name customization is a client-wide (tenant) setting, not personal — only the
+          roles that can actually edit it (see /profile/module-names) get the entry point here. */}
+      {isClientAdmin || isPlatformAdmin ? (
+        <Link href="/profile/module-names">
+          <Card className="transition-colors hover:bg-muted/50">
+            <CardContent className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-sm font-medium">{t("moduleNames.profileLinkTitle")}</p>
+                <p className="text-sm text-muted-foreground">{t("moduleNames.profileLinkDescription")}</p>
+              </div>
+              <ChevronRightIcon className="size-4 shrink-0 text-muted-foreground" />
+            </CardContent>
+          </Card>
+        </Link>
       ) : null}
     </>
   );

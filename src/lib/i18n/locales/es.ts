@@ -75,6 +75,7 @@ const es: TranslationKeys = {
     backendApi: "API del backend:",
   },
   dashboard: {
+    moduleName: "Panel",
     welcomeBack: "Bienvenido de nuevo",
     signedInAs: "Sesión iniciada como",
     allClients: "todos los clientes",
@@ -93,6 +94,7 @@ const es: TranslationKeys = {
     goToPolicies: "Ir a políticas",
   },
   policies: {
+    moduleName: "Política",
     title: "Políticas",
     description: "Políticas de cumplimiento globales (estatutarias) y específicas del cliente, con fecha de vigencia y versionadas.",
     newPolicy: "Nueva política",
@@ -159,6 +161,7 @@ const es: TranslationKeys = {
     couldntCreatePolicy: "No se pudo crear la política",
   },
   ruleGroups: {
+    moduleName: "Grupo de reglas",
     title: "Grupos de reglas",
     description: "Conjuntos de políticas con nombre que un cliente asigna a una población de la fuerza laboral.",
     newRuleGroup: "Nuevo grupo de reglas",
@@ -208,6 +211,7 @@ const es: TranslationKeys = {
     versionNumber: "Número de versión",
   },
   assignments: {
+    moduleName: "Asignación",
     title: "Asignaciones",
     description: "Vínculos de grupos de reglas a poblaciones de empleados, grupos de pago, ubicaciones, departamentos o estados.",
     newAssignment: "Nueva asignación",
@@ -260,6 +264,7 @@ const es: TranslationKeys = {
     open: "Abierto",
   },
   resolve: {
+    moduleName: "Resolver",
     title: "Resolver reglas",
     description: "Responde “¿qué reglas aplican a este trabajador en esta fecha?” — la consulta clave que usa el motor de nómina/horarios.",
     queryTitle: "Consulta",
@@ -287,6 +292,7 @@ const es: TranslationKeys = {
     priority: "prioridad",
   },
   clients: {
+    moduleName: "Cliente",
     title: "Clientes",
     description: "Inquilinos del repositorio de reglas. Cada uno posee sus políticas, grupos de reglas y asignaciones.",
     newClient: "Nuevo cliente",
@@ -324,6 +330,7 @@ const es: TranslationKeys = {
     disabled: "deshabilitado",
   },
   users: {
+    moduleName: "Usuario",
     title: "Usuarios",
     description: "Cuentas con acceso al repositorio de reglas, según rol y cliente.",
     newUser: "Nuevo usuario",
@@ -348,6 +355,7 @@ const es: TranslationKeys = {
     passwordMinLength: "La contraseña debe tener al menos 8 caracteres",
   },
   profile: {
+    moduleName: "Perfil",
     title: "Mi perfil",
     description: "Los detalles de tu cuenta, tus preferencias de visualización y tu contraseña.",
     photoTitle: "Foto",
@@ -393,6 +401,7 @@ const es: TranslationKeys = {
     newPasswordMinLength: "La nueva contraseña debe tener al menos 8 caracteres",
   },
   auditLogs: {
+    moduleName: "Registro de auditoría",
     title: "Registros de auditoría",
     description: "Registro de solo anexado de cambios en políticas, grupos de reglas y asignaciones en todos los clientes.",
     filterByEntityType: "Filtrar por tipo de entidad",
@@ -520,6 +529,24 @@ const es: TranslationKeys = {
     monthly: "Mensual",
     percent: "Porcentaje",
     flat: "Fijo",
+  },
+  moduleNames: {
+    title: "Personalizar nombres de módulos",
+    description:
+      "Cambia el nombre de cualquier módulo para todos los usuarios de tu organización, por ejemplo, cambia \"Políticas\" por \"Directrices\". Proporciona el nombre en los tres idiomas para que ninguna frase mezcle idiomas.",
+    profileLinkTitle: "Personalizar nombres de módulos",
+    profileLinkDescription: "Cambia el nombre de módulos como Políticas o Grupos de reglas para toda tu organización.",
+    backToProfile: "Volver al perfil",
+    singular: "Singular",
+    plural: "Plural",
+    resetToDefault: "Restablecer al valor predeterminado",
+    selectClient: "Cliente",
+    selectClientPlaceholder: "Selecciona un cliente…",
+    noClientSelected: "Selecciona un cliente para personalizar sus nombres de módulos.",
+    saved: "Nombres de módulos guardados",
+    couldntSave: "No se pudieron guardar los nombres de módulos",
+    couldntLoadClients: "No se pudieron cargar los clientes",
+    fieldRequired: "Todos los campos son obligatorios",
   },
 };
 

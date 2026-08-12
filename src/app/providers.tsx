@@ -7,7 +7,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AuthProvider } from "@/lib/auth";
 import { DateFormatProvider } from "@/lib/date-format";
-import { I18nProvider } from "@/lib/i18n/i18n";
+import { I18nProvider, ModuleLabelsBridge } from "@/lib/i18n/i18n";
 
 export function Providers({ children }: { children: ReactNode }) {
   const [queryClient] = useState(
@@ -24,9 +24,11 @@ export function Providers({ children }: { children: ReactNode }) {
       <I18nProvider>
         <QueryClientProvider client={queryClient}>
           <AuthProvider>
-            <DateFormatProvider>
-              <TooltipProvider>{children}</TooltipProvider>
-            </DateFormatProvider>
+            <ModuleLabelsBridge>
+              <DateFormatProvider>
+                <TooltipProvider>{children}</TooltipProvider>
+              </DateFormatProvider>
+            </ModuleLabelsBridge>
           </AuthProvider>
           <Toaster richColors closeButton position="top-center" />
         </QueryClientProvider>

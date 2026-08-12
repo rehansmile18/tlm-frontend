@@ -75,6 +75,7 @@ const ar: TranslationKeys = {
     backendApi: "واجهة برمجة الخلفية:",
   },
   dashboard: {
+    moduleName: "لوحة التحكم",
     welcomeBack: "مرحبًا بعودتك",
     signedInAs: "تم تسجيل الدخول باسم",
     allClients: "جميع العملاء",
@@ -91,6 +92,7 @@ const ar: TranslationKeys = {
     goToPolicies: "الانتقال إلى السياسات",
   },
   policies: {
+    moduleName: "سياسة",
     title: "السياسات",
     description: "سياسات الامتثال العامة (النظامية) والخاصة بالعميل، مؤرَّخة السريان ومرقّمة الإصدارات.",
     newPolicy: "سياسة جديدة",
@@ -156,6 +158,7 @@ const ar: TranslationKeys = {
     couldntCreatePolicy: "تعذّر إنشاء السياسة",
   },
   ruleGroups: {
+    moduleName: "مجموعة قواعد",
     title: "مجموعات القواعد",
     description: "مجموعات سياسات مسمّاة يعيّنها العميل لفئة من القوى العاملة.",
     newRuleGroup: "مجموعة قواعد جديدة",
@@ -205,6 +208,7 @@ const ar: TranslationKeys = {
     versionNumber: "رقم الإصدار",
   },
   assignments: {
+    moduleName: "تعيين",
     title: "التعيينات",
     description: "روابط مجموعات القواعد بفئات الموظفين أو مجموعات الرواتب أو المواقع أو الأقسام أو الولايات.",
     newAssignment: "تعيين جديد",
@@ -257,6 +261,7 @@ const ar: TranslationKeys = {
     open: "مفتوح",
   },
   resolve: {
+    moduleName: "حلّ",
     title: "حلّ القواعد",
     description: "أجب عن سؤال «ما القواعد التي تنطبق على هذا الموظف في هذا التاريخ؟» — الاستعلام الأساسي الذي يعتمد عليه محرك الرواتب/الدوام.",
     queryTitle: "الاستعلام",
@@ -284,6 +289,7 @@ const ar: TranslationKeys = {
     priority: "الأولوية",
   },
   clients: {
+    moduleName: "عميل",
     title: "العملاء",
     description: "مستأجرو مستودع القواعد. يمتلك كل منهم سياساته ومجموعات قواعده وتعييناته.",
     newClient: "عميل جديد",
@@ -321,6 +327,7 @@ const ar: TranslationKeys = {
     disabled: "معطّل",
   },
   users: {
+    moduleName: "مستخدم",
     title: "المستخدمون",
     description: "الحسابات التي لديها وصول إلى مستودع القواعد، محددة النطاق حسب الدور والعميل.",
     newUser: "مستخدم جديد",
@@ -345,6 +352,7 @@ const ar: TranslationKeys = {
     passwordMinLength: "يجب أن تتكون كلمة المرور من 8 أحرف على الأقل",
   },
   profile: {
+    moduleName: "ملفي الشخصي",
     title: "ملفي الشخصي",
     description: "تفاصيل حسابك، وتفضيلات العرض، وكلمة المرور.",
     photoTitle: "الصورة",
@@ -390,6 +398,7 @@ const ar: TranslationKeys = {
     newPasswordMinLength: "يجب أن تتكون كلمة المرور الجديدة من 8 أحرف على الأقل",
   },
   auditLogs: {
+    moduleName: "سجل تدقيق",
     title: "سجلات التدقيق",
     description: "سجل إلحاق فقط للتغييرات في السياسات ومجموعات القواعد والتعيينات عبر جميع العملاء.",
     filterByEntityType: "تصفية حسب نوع الكيان",
@@ -517,6 +526,24 @@ const ar: TranslationKeys = {
     monthly: "شهري",
     percent: "نسبة مئوية",
     flat: "ثابت",
+  },
+  moduleNames: {
+    title: "تخصيص أسماء الوحدات",
+    description:
+      "أعد تسمية أي وحدة لجميع مستخدمي مؤسستك — على سبيل المثال أعد تسمية \"السياسات\" إلى \"الإرشادات\". أدخل الاسم باللغات الثلاث حتى لا تختلط اللغات داخل أي جملة.",
+    profileLinkTitle: "تخصيص أسماء الوحدات",
+    profileLinkDescription: "أعد تسمية وحدات مثل السياسات أو مجموعات القواعد لمؤسستك بالكامل.",
+    backToProfile: "الرجوع إلى الملف الشخصي",
+    singular: "المفرد",
+    plural: "الجمع",
+    resetToDefault: "إعادة التعيين إلى الافتراضي",
+    selectClient: "العميل",
+    selectClientPlaceholder: "اختر عميلاً…",
+    noClientSelected: "اختر عميلاً لتخصيص أسماء وحداته.",
+    saved: "تم حفظ أسماء الوحدات",
+    couldntSave: "تعذر حفظ أسماء الوحدات",
+    couldntLoadClients: "تعذر تحميل العملاء",
+    fieldRequired: "جميع الحقول مطلوبة",
   },
 };
 

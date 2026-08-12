@@ -172,6 +172,12 @@ export interface ResolveResult {
   consideredAssignments: number;
 }
 
+// Per-module display-name overrides (e.g. renaming "Policies" to "Guidelines"), shared by every
+// user of a client — one singular/plural pair per supported locale, since a single override
+// reused across languages would produce mixed-language sentences. Keyed by an opaque module key
+// this app defines (see module-registry.ts); TLM itself never inspects the keys.
+export type ModuleLabelOverrides = Record<string, Record<"en" | "es" | "ar", { singular: string; plural: string }>>;
+
 export interface Client {
   _id: string;
   name: string;
@@ -180,6 +186,7 @@ export interface Client {
   enabledStates: string[];
   calendarFormat: CalendarFormat;
   createdAt: string;
+  moduleLabels: ModuleLabelOverrides | null;
 }
 
 export interface GeoCountry {
