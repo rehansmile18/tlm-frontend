@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -12,7 +11,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StatusBadge } from "@/components/status-badge";
 import { ErrorState, humanizeError } from "@/components/data-state";
-import { AssignmentEditDialog } from "@/components/assignments/assignment-edit-dialog";
 import { assignmentsApi, ruleGroupsApi } from "@/lib/resources";
 import { queryKeys } from "@/lib/query-keys";
 import { useRole } from "@/lib/auth";
@@ -35,7 +33,6 @@ export default function AssignmentDetailPage() {
   const { canWrite } = useRole();
   const { formatDate } = useDateFormat();
   const { t } = useTranslation();
-  const [editOpen, setEditOpen] = useState(false);
 
   const query = useQuery({ queryKey: queryKeys.assignment(assignmentId), queryFn: () => assignmentsApi.get(assignmentId) });
   const ruleGroupsQuery = useQuery({
@@ -80,7 +77,12 @@ export default function AssignmentDetailPage() {
           <div className="flex flex-wrap items-center gap-2">
             <StatusBadge tone={assignmentStatusTone(a.status)}>{t(`assignmentStatus.${a.status}`)}</StatusBadge>
             {canWrite ? (
-              <Button size="sm" variant="outline" onClick={() => setEditOpen(true)}>
+              <Button
+                size="sm"
+                variant="outline"
+                nativeButton={false}
+                render={<Link href={`/assignments/${assignmentId}/edit`} />}
+              >
                 <PencilIcon className="size-3.5" />
                 {t("common.edit")}
               </Button>
@@ -124,8 +126,6 @@ export default function AssignmentDetailPage() {
           </dl>
         </CardContent>
       </Card>
-
-      <AssignmentEditDialog open={editOpen} onOpenChange={setEditOpen} assignment={a} />
     </>
   );
 }

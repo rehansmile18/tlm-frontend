@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { PlusIcon } from "lucide-react";
@@ -12,7 +13,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { StatusBadge } from "@/components/status-badge";
 import { EmptyState, ErrorState } from "@/components/data-state";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { RuleGroupFormDialog } from "@/components/rule-groups/rule-group-form-dialog";
 import { ruleGroupsApi, type RuleGroupListParams } from "@/lib/resources";
 import { queryKeys } from "@/lib/query-keys";
 import { useRole } from "@/lib/auth";
@@ -26,7 +26,6 @@ export default function RuleGroupsPage() {
   const { canWrite } = useRole();
   const { formatDate } = useDateFormat();
   const { t } = useTranslation();
-  const [dialogOpen, setDialogOpen] = useState(false);
   const [status, setStatus] = useState<RuleGroupListParams["status"] | "">("");
 
   const params: RuleGroupListParams = { status: status || undefined, pageSize: 200 };
@@ -53,7 +52,7 @@ export default function RuleGroupsPage() {
         description={t("ruleGroups.description")}
         actions={
           canWrite ? (
-            <Button onClick={() => setDialogOpen(true)}>
+            <Button nativeButton={false} render={<Link href="/rule-groups/new" />}>
               <PlusIcon className="size-4" />
               {t("ruleGroups.newRuleGroup")}
             </Button>
@@ -91,7 +90,7 @@ export default function RuleGroupsPage() {
           description={canWrite ? t("ruleGroups.noneFoundHint") : t("common.nothingToShow")}
           action={
             canWrite ? (
-              <Button onClick={() => setDialogOpen(true)}>
+              <Button nativeButton={false} render={<Link href="/rule-groups/new" />}>
                 <PlusIcon className="size-4" />
                 {t("ruleGroups.newRuleGroup")}
               </Button>
@@ -128,8 +127,6 @@ export default function RuleGroupsPage() {
           </div>
         </Card>
       )}
-
-      <RuleGroupFormDialog open={dialogOpen} onOpenChange={setDialogOpen} />
     </>
   );
 }

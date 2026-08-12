@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { PlusIcon } from "lucide-react";
@@ -12,10 +13,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { StatusBadge } from "@/components/status-badge";
 import { EmptyState, ErrorState } from "@/components/data-state";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { PolicyFormDialog } from "@/components/policies/policy-form-dialog";
 import { policiesApi, type PolicyListParams } from "@/lib/resources";
 import { queryKeys } from "@/lib/query-keys";
-import { usePolicyTypes } from "@/lib/hooks";
 import { useRole } from "@/lib/auth";
 import { useDateFormat } from "@/lib/date-format";
 import { useTranslation } from "@/lib/i18n/i18n";
@@ -29,8 +28,6 @@ export default function PoliciesPage() {
   const { canWrite } = useRole();
   const { formatDate } = useDateFormat();
   const { t } = useTranslation();
-  const policyTypes = usePolicyTypes();
-  const [dialogOpen, setDialogOpen] = useState(false);
 
   const [filters, setFilters] = useState<PolicyListParams>({});
   const [page, setPage] = useState(1);
@@ -58,7 +55,7 @@ export default function PoliciesPage() {
         description={t("policies.description")}
         actions={
           canWrite ? (
-            <Button onClick={() => setDialogOpen(true)}>
+            <Button nativeButton={false} render={<Link href="/policies/new" />}>
               <PlusIcon className="size-4" />
               {t("policies.newPolicy")}
             </Button>
@@ -130,7 +127,7 @@ export default function PoliciesPage() {
           description={canWrite ? t("policies.noneFoundHint") : t("policies.noneMatch")}
           action={
             canWrite ? (
-              <Button onClick={() => setDialogOpen(true)}>
+              <Button nativeButton={false} render={<Link href="/policies/new" />}>
                 <PlusIcon className="size-4" />
                 {t("policies.newPolicy")}
               </Button>
@@ -189,8 +186,6 @@ export default function PoliciesPage() {
           </div>
         </div>
       ) : null}
-
-      <PolicyFormDialog open={dialogOpen} onOpenChange={setDialogOpen} policyTypes={policyTypes.data?.policyTypes ?? []} />
     </>
   );
 }

@@ -4,14 +4,6 @@ import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2Icon } from "lucide-react";
 import { toast } from "sonner";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,7 +15,7 @@ import { useRole } from "@/lib/auth";
 import { useTranslation, type TranslationKey } from "@/lib/i18n/i18n";
 import { humanizeError } from "@/components/data-state";
 import { toDateInput } from "@/lib/format";
-import { ASSIGNMENT_TARGET_TYPES, type AssignmentTargetType, type RuleGroup } from "@/lib/types";
+import { ASSIGNMENT_TARGET_TYPES, type Assignment, type AssignmentTargetType, type RuleGroup } from "@/lib/types";
 
 const TARGET_HELP_KEY: Record<AssignmentTargetType, TranslationKey> = {
   EMPLOYEE: "assignments.targetHelpEmployee",
@@ -33,7 +25,7 @@ const TARGET_HELP_KEY: Record<AssignmentTargetType, TranslationKey> = {
   STATE: "assignments.targetHelpState",
 };
 
-function AssignmentForm({ onDone }: { onDone: () => void }) {
+export function AssignmentForm({ onDone }: { onDone: (saved: Assignment) => void }) {
   const { isPlatformAdmin, clientId: ownClientId } = useRole();
   const { t } = useTranslation();
   const clients = useClients();
@@ -79,10 +71,10 @@ function AssignmentForm({ onDone }: { onDone: () => void }) {
       };
       return assignmentsApi.create(body);
     },
-    onSuccess: () => {
+    onSuccess: (saved) => {
       toast.success(t("assignments.toastCreated"));
       queryClient.invalidateQueries({ queryKey: ["assignments"] });
-      onDone();
+      onDone(saved);
     },
     onError: (error) => toast.error(t("assignments.couldntCreate"), { description: humanizeError(error) }),
   });
@@ -168,27 +160,12 @@ function AssignmentForm({ onDone }: { onDone: () => void }) {
         </div>
       </div>
 
-      <DialogFooter>
+      <div className="flex flex-col-reverse gap-2 border-t pt-4 sm:flex-row sm:justify-end">
         <Button type="submit" disabled={mutation.isPending}>
           {mutation.isPending ? <Loader2Icon className="size-4 animate-spin" /> : null}
           {t("assignments.createAssignment")}
         </Button>
-      </DialogFooter>
+      </div>
     </form>
-  );
-}
-
-export function AssignmentFormDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
-  const { t } = useTranslation();
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-xl">
-        <DialogHeader>
-          <DialogTitle>{t("assignments.newDialogTitle")}</DialogTitle>
-          <DialogDescription>{t("assignments.newDialogDescription")}</DialogDescription>
-        </DialogHeader>
-        {open ? <AssignmentForm onDone={() => onOpenChange(false)} /> : null}
-      </DialogContent>
-    </Dialog>
   );
 }

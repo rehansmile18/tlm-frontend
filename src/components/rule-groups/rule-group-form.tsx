@@ -4,14 +4,6 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowDownIcon, ArrowUpIcon, Loader2Icon, PlusIcon, Trash2Icon } from "lucide-react";
 import { toast } from "sonner";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -42,7 +34,13 @@ function toRefRows(refs: PolicyRef[]): RefRow[] {
   }));
 }
 
-function RuleGroupForm({ ruleGroup, onDone }: { ruleGroup?: RuleGroup; onDone: () => void }) {
+export function RuleGroupForm({
+  ruleGroup,
+  onDone,
+}: {
+  ruleGroup?: RuleGroup;
+  onDone: (saved: RuleGroup) => void;
+}) {
   const isEdit = Boolean(ruleGroup);
   const { isPlatformAdmin, clientId: ownClientId } = useRole();
   const { t } = useTranslation();
@@ -82,7 +80,7 @@ function RuleGroupForm({ ruleGroup, onDone }: { ruleGroup?: RuleGroup; onDone: (
       toast.success(isEdit ? t("ruleGroups.toastVersionCreated") : t("ruleGroups.toastCreated"));
       queryClient.invalidateQueries({ queryKey: ["rule-groups"] });
       queryClient.invalidateQueries({ queryKey: ["rule-group", saved.ruleGroupId] });
-      onDone();
+      onDone(saved);
     },
     onError: (error) => toast.error(t("ruleGroups.couldntSave"), { description: humanizeError(error) }),
   });
@@ -244,35 +242,12 @@ function RuleGroupForm({ ruleGroup, onDone }: { ruleGroup?: RuleGroup; onDone: (
         </div>
       </div>
 
-      <DialogFooter>
+      <div className="flex flex-col-reverse gap-2 border-t pt-4 sm:flex-row sm:justify-end">
         <Button type="submit" disabled={mutation.isPending}>
           {mutation.isPending ? <Loader2Icon className="size-4 animate-spin" /> : null}
           {isEdit ? t("ruleGroups.saveNewVersion") : t("ruleGroups.createRuleGroup")}
         </Button>
-      </DialogFooter>
+      </div>
     </form>
-  );
-}
-
-export function RuleGroupFormDialog({
-  open,
-  onOpenChange,
-  ruleGroup,
-}: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  ruleGroup?: RuleGroup;
-}) {
-  const { t } = useTranslation();
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl">
-        <DialogHeader>
-          <DialogTitle>{ruleGroup ? t("ruleGroups.editDialogTitle") : t("ruleGroups.newDialogTitle")}</DialogTitle>
-          <DialogDescription>{t("ruleGroups.dialogDescription")}</DialogDescription>
-        </DialogHeader>
-        {open ? <RuleGroupForm key={ruleGroup?._id ?? "new"} ruleGroup={ruleGroup} onDone={() => onOpenChange(false)} /> : null}
-      </DialogContent>
-    </Dialog>
   );
 }

@@ -18,10 +18,9 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { StatusBadge } from "@/components/status-badge";
 import { ErrorState, humanizeError } from "@/components/data-state";
 import { RulesView } from "@/components/policies/rules-view";
-import { PolicyFormDialog } from "@/components/policies/policy-form-dialog";
 import { policiesApi } from "@/lib/resources";
 import { queryKeys } from "@/lib/query-keys";
-import { usePolicyTypes, useClients } from "@/lib/hooks";
+import { useClients } from "@/lib/hooks";
 import { useRole } from "@/lib/auth";
 import { useDateFormat } from "@/lib/date-format";
 import { useTranslation } from "@/lib/i18n/i18n";
@@ -44,10 +43,8 @@ export default function PolicyDetailPage() {
   const { canWrite, isPlatformAdmin, clientId: ownClientId } = useRole();
   const { formatDate, formatDateTime } = useDateFormat();
   const { t } = useTranslation();
-  const policyTypes = usePolicyTypes();
   const clients = useClients();
 
-  const [editOpen, setEditOpen] = useState(false);
   const [rejectOpen, setRejectOpen] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
   const [cloneOpen, setCloneOpen] = useState(false);
@@ -142,7 +139,7 @@ export default function PolicyDetailPage() {
               </>
             ) : null}
             {canWrite && (status === "draft" || status === "active") ? (
-              <Button size="sm" variant="outline" onClick={() => setEditOpen(true)}>
+              <Button size="sm" variant="outline" nativeButton={false} render={<Link href={`/policies/${policyId}/edit`} />}>
                 <PencilIcon className="size-3.5" />
                 {t("common.edit")}
               </Button>
@@ -245,8 +242,6 @@ export default function PolicyDetailPage() {
           </Table>
         </div>
       </Card>
-
-      <PolicyFormDialog open={editOpen} onOpenChange={setEditOpen} policy={policy} policyTypes={policyTypes.data?.policyTypes ?? []} />
 
       <Dialog open={rejectOpen} onOpenChange={setRejectOpen}>
         <DialogContent>

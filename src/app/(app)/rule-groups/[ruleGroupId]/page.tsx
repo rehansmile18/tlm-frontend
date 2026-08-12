@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -13,7 +12,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { StatusBadge } from "@/components/status-badge";
 import { ErrorState, humanizeError } from "@/components/data-state";
-import { RuleGroupFormDialog } from "@/components/rule-groups/rule-group-form-dialog";
 import { policiesApi, ruleGroupsApi } from "@/lib/resources";
 import { queryKeys } from "@/lib/query-keys";
 import { useRole } from "@/lib/auth";
@@ -37,7 +35,6 @@ export default function RuleGroupDetailPage() {
   const { canWrite } = useRole();
   const { formatDate, formatDateTime } = useDateFormat();
   const { t } = useTranslation();
-  const [editOpen, setEditOpen] = useState(false);
 
   const rgQuery = useQuery({ queryKey: queryKeys.ruleGroup(ruleGroupId), queryFn: () => ruleGroupsApi.get(ruleGroupId) });
   const policiesQuery = useQuery({
@@ -93,7 +90,12 @@ export default function RuleGroupDetailPage() {
             ) : null}
             {canWrite && rg.status === "active" ? (
               <>
-                <Button size="sm" variant="outline" onClick={() => setEditOpen(true)}>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  nativeButton={false}
+                  render={<Link href={`/rule-groups/${ruleGroupId}/edit`} />}
+                >
                   <PencilIcon className="size-3.5" />
                   {t("common.edit")}
                 </Button>
@@ -155,8 +157,6 @@ export default function RuleGroupDetailPage() {
           </Table>
         </div>
       </Card>
-
-      <RuleGroupFormDialog open={editOpen} onOpenChange={setEditOpen} ruleGroup={rg} />
     </>
   );
 }

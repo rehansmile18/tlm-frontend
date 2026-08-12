@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
@@ -12,7 +12,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { StatusBadge } from "@/components/status-badge";
 import { EmptyState, ErrorState } from "@/components/data-state";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { AssignmentFormDialog } from "@/components/assignments/assignment-form-dialog";
 import { assignmentsApi, ruleGroupsApi } from "@/lib/resources";
 import { queryKeys } from "@/lib/query-keys";
 import { useRole } from "@/lib/auth";
@@ -25,7 +24,6 @@ export default function AssignmentsPage() {
   const { canWrite } = useRole();
   const { formatDate } = useDateFormat();
   const { t } = useTranslation();
-  const [dialogOpen, setDialogOpen] = useState(false);
 
   const query = useQuery({
     queryKey: queryKeys.assignments({ pageSize: 200 }),
@@ -57,7 +55,7 @@ export default function AssignmentsPage() {
               {t("assignments.resolve")}
             </Button>
             {canWrite ? (
-              <Button onClick={() => setDialogOpen(true)}>
+              <Button nativeButton={false} render={<Link href="/assignments/new" />}>
                 <PlusIcon className="size-4" />
                 {t("assignments.newAssignment")}
               </Button>
@@ -80,7 +78,7 @@ export default function AssignmentsPage() {
           description={canWrite ? t("assignments.noneFoundHint") : t("common.nothingToShow")}
           action={
             canWrite ? (
-              <Button onClick={() => setDialogOpen(true)}>
+              <Button nativeButton={false} render={<Link href="/assignments/new" />}>
                 <PlusIcon className="size-4" />
                 {t("assignments.newAssignment")}
               </Button>
@@ -121,8 +119,6 @@ export default function AssignmentsPage() {
           </div>
         </Card>
       )}
-
-      <AssignmentFormDialog open={dialogOpen} onOpenChange={setDialogOpen} />
     </>
   );
 }

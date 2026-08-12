@@ -4,14 +4,6 @@ import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Loader2Icon } from "lucide-react";
 import { toast } from "sonner";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -32,14 +24,14 @@ function schemaFor(policyTypes: PolicyTypeSchema[], type: PolicyType) {
   return policyTypes.find((pt) => pt.policyType === type)?.rulesSchema ?? { type: "object", properties: {} };
 }
 
-function PolicyForm({
+export function PolicyForm({
   policy,
   policyTypes,
   onDone,
 }: {
   policy?: Policy;
   policyTypes: PolicyTypeSchema[];
-  onDone: () => void;
+  onDone: (saved: Policy) => void;
 }) {
   const isEdit = Boolean(policy);
   const { isPlatformAdmin, clientId: ownClientId } = useRole();
@@ -101,7 +93,7 @@ function PolicyForm({
       queryClient.invalidateQueries({ queryKey: ["policies"] });
       queryClient.invalidateQueries({ queryKey: ["policy", saved.policyId] });
       queryClient.invalidateQueries({ queryKey: ["policy-versions", saved.policyId] });
-      onDone();
+      onDone(saved);
     },
     onError: (error) =>
       toast.error(isEdit ? t("policies.couldntSaveVersion") : t("policies.couldntCreatePolicy"), { description: humanizeError(error) }),
@@ -220,37 +212,12 @@ function PolicyForm({
         </div>
       </div>
 
-      <DialogFooter>
+      <div className="flex flex-col-reverse gap-2 border-t pt-4 sm:flex-row sm:justify-end">
         <Button type="submit" disabled={mutation.isPending}>
           {mutation.isPending ? <Loader2Icon className="size-4 animate-spin" /> : null}
           {isEdit ? t("ruleGroups.saveNewVersion") : t("policies.newPolicy")}
         </Button>
-      </DialogFooter>
+      </div>
     </form>
-  );
-}
-
-export function PolicyFormDialog({
-  open,
-  onOpenChange,
-  policy,
-  policyTypes,
-}: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  policy?: Policy;
-  policyTypes: PolicyTypeSchema[];
-}) {
-  const { t } = useTranslation();
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-xl">
-        <DialogHeader>
-          <DialogTitle>{policy ? t("policies.editPolicyTitle") : t("policies.newPolicyTitle")}</DialogTitle>
-          <DialogDescription>{policy ? t("policies.editDescription") : t("policies.newDescription")}</DialogDescription>
-        </DialogHeader>
-        {open ? <PolicyForm key={policy?._id ?? "new"} policy={policy} policyTypes={policyTypes} onDone={() => onOpenChange(false)} /> : null}
-      </DialogContent>
-    </Dialog>
   );
 }

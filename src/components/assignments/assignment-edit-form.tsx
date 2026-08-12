@@ -4,14 +4,6 @@ import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Loader2Icon } from "lucide-react";
 import { toast } from "sonner";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,7 +14,7 @@ import { humanizeError } from "@/components/data-state";
 import { toDateInput } from "@/lib/format";
 import { ASSIGNMENT_STATUSES, type Assignment, type AssignmentStatus } from "@/lib/types";
 
-function EditForm({ assignment, onDone }: { assignment: Assignment; onDone: () => void }) {
+export function AssignmentEditForm({ assignment, onDone }: { assignment: Assignment; onDone: (saved: Assignment) => void }) {
   const queryClient = useQueryClient();
   const { t } = useTranslation();
   const [targetIdsText, setTargetIdsText] = useState(assignment.targetIds.join(", "));
@@ -46,11 +38,11 @@ function EditForm({ assignment, onDone }: { assignment: Assignment; onDone: () =
       };
       return assignmentsApi.update(assignment._id, body);
     },
-    onSuccess: () => {
+    onSuccess: (saved) => {
       toast.success(t("assignments.toastUpdated"));
       queryClient.invalidateQueries({ queryKey: ["assignments"] });
       queryClient.invalidateQueries({ queryKey: ["assignment", assignment._id] });
-      onDone();
+      onDone(saved);
     },
     onError: (error) => toast.error(t("assignments.couldntUpdate"), { description: humanizeError(error) }),
   });
@@ -95,35 +87,12 @@ function EditForm({ assignment, onDone }: { assignment: Assignment; onDone: () =
           <Input id="eTo" type="date" value={effectiveTo} onChange={(e) => setEffectiveTo(e.target.value)} />
         </div>
       </div>
-      <DialogFooter>
+      <div className="flex flex-col-reverse gap-2 border-t pt-4 sm:flex-row sm:justify-end">
         <Button type="submit" disabled={mutation.isPending}>
           {mutation.isPending ? <Loader2Icon className="size-4 animate-spin" /> : null}
           {t("assignments.saveChanges")}
         </Button>
-      </DialogFooter>
+      </div>
     </form>
-  );
-}
-
-export function AssignmentEditDialog({
-  open,
-  onOpenChange,
-  assignment,
-}: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  assignment: Assignment;
-}) {
-  const { t } = useTranslation();
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-xl">
-        <DialogHeader>
-          <DialogTitle>{t("assignments.editDialogTitle")}</DialogTitle>
-          <DialogDescription>{t("assignments.editDialogDescription")}</DialogDescription>
-        </DialogHeader>
-        {open ? <EditForm key={assignment._id} assignment={assignment} onDone={() => onOpenChange(false)} /> : null}
-      </DialogContent>
-    </Dialog>
   );
 }
