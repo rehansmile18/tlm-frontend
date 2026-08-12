@@ -62,6 +62,9 @@ const ar: TranslationKeys = {
     expandSidebar: "توسيع الشريط الجانبي",
     openMenu: "فتح القائمة",
     profile: "الملف الشخصي",
+    appSwitcher: "تبديل التطبيق",
+    ruleRepositoryApp: "مستودع القواعد",
+    siteOperationsApp: "عمليات الموقع",
   },
   auth: {
     title: "مستودع قواعد TLM",

@@ -62,6 +62,9 @@ const en = {
     expandSidebar: "Expand sidebar",
     openMenu: "Open menu",
     profile: "Profile",
+    appSwitcher: "Switch app",
+    ruleRepositoryApp: "Rule Repository",
+    siteOperationsApp: "Site Operations",
   },
   auth: {
     title: "TLM Rule Repository",

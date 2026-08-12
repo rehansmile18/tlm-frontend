@@ -22,6 +22,7 @@ import { UserAvatar } from "@/components/user-avatar";
 import { Brand, SidebarNav } from "./sidebar";
 import { ThemeToggle } from "./theme-toggle";
 import { LanguageSwitcher } from "./language-switcher";
+import { AppSwitcher } from "./app-switcher";
 
 export function Topbar() {
   const { user, logout } = useAuth();
@@ -54,6 +55,7 @@ export function Topbar() {
 
       <div className="flex-1" />
 
+      <AppSwitcher />
       <LanguageSwitcher />
       <ThemeToggle />
 

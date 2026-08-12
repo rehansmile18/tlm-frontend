@@ -62,6 +62,9 @@ const es: TranslationKeys = {
     expandSidebar: "Expandir barra lateral",
     openMenu: "Abrir menú",
     profile: "Perfil",
+    appSwitcher: "Cambiar de aplicación",
+    ruleRepositoryApp: "Repositorio de Reglas",
+    siteOperationsApp: "Operaciones de Sitio",
   },
   auth: {
     title: "Repositorio de Reglas TLM",

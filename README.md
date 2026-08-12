@@ -48,6 +48,7 @@ backend's `npm run seed`, or a demo account if you seeded demo data).
 | Variable | Default | Purpose |
 |---|---|---|
 | `NEXT_PUBLIC_API_BASE_URL` | `http://localhost:4000/api/v1` | Base URL of the backend API |
+| `NEXT_PUBLIC_SITE_OPS_APP_URL` | `http://localhost:3001` | Base URL of the tlm-frontend-service app, used by the app switcher |
 
 The backend allows all CORS origins by default in development, so the dev server on port 3000 can
 call it without extra config. In production, set the backend's `CORS_ORIGIN` to this app's origin.
