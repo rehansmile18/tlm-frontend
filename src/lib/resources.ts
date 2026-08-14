@@ -208,7 +208,10 @@ export const usersApi = {
   create: (body: CreateUserBody) => apiFetch<UserRecord>("/users", { method: "POST", body }),
   me: () => apiFetch<UserProfile>("/users/me"),
   updateMe: (body: UpdateProfileBody) => apiFetch<UserProfile>("/users/me", { method: "PATCH", body }),
-  changePassword: (body: ChangePasswordBody) => apiFetch<void>("/users/me/change-password", { method: "POST", body }),
+  // expects401: a wrong CURRENT password comes back as 401, which has nothing to do with the
+  // bearer token — without this the caller would be signed out for a typo.
+  changePassword: (body: ChangePasswordBody) =>
+    apiFetch<void>("/users/me/change-password", { method: "POST", body, expects401: true }),
   updateAvatar: (avatarUrl: string | null) =>
     apiFetch<UserProfile>("/users/me/avatar", { method: "PATCH", body: { avatarUrl } }),
 };

@@ -25,6 +25,13 @@ export interface RequestOptions {
   body?: unknown;
   query?: Record<string, QueryValue>;
   signal?: AbortSignal;
+  /**
+   * Opts out of the "401 means the session died, sign the user out" handling below. Set it for the
+   * handful of endpoints where a 401 is about the REQUEST's own credentials rather than the bearer
+   * token — currently just change-password, where "current password is incorrect" would otherwise
+   * log a user out over a typo.
+   */
+  expects401?: boolean;
 }
 
 function buildUrl(path: string, query?: RequestOptions["query"]): string {
@@ -68,7 +75,7 @@ export async function apiFetch<T>(path: string, opts: RequestOptions = {}): Prom
     }
   }
 
-  if (res.status === 401) {
+  if (res.status === 401 && !opts.expects401) {
     clearSession();
   }
 
