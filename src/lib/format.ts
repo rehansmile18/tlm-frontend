@@ -7,6 +7,9 @@ export const CALENDAR_FORMAT_PATTERNS: Record<CalendarFormat, string> = {
   "MM/DD/YYYY": "MM/dd/yyyy",
   "DD/MM/YYYY": "dd/MM/yyyy",
   "YYYY-MM-DD": "yyyy-MM-dd",
+  "DD.MM.YYYY": "dd.MM.yyyy",
+  "DD-MM-YYYY": "dd-MM-yyyy",
+  "YYYY/MM/DD": "yyyy/MM/dd",
 };
 
 /** Locale-agnostic fallback (no client format available yet, e.g. before login resolves). */

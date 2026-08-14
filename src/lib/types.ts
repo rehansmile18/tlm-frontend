@@ -32,9 +32,10 @@ export type RuleGroupStatus = (typeof RULE_GROUP_STATUSES)[number];
 export const USER_ROLES = ["PLATFORM_ADMIN", "CLIENT_ADMIN", "VIEWER"] as const;
 export type UserRole = (typeof USER_ROLES)[number];
 
-// Per-client date DISPLAY format (day/month/year order) shown to every user under that client,
-// everywhere in the app. Calendar math stays Gregorian — this only controls rendering.
-export const CALENDAR_FORMATS = ["MM/DD/YYYY", "DD/MM/YYYY", "YYYY-MM-DD"] as const;
+// Date DISPLAY format (day/month/year order), settable per-client (default) and per-user (own
+// override — see UserProfile.preferredDateFormat below). Calendar math stays Gregorian — this only
+// controls rendering. Mirrors TLM's own CALENDAR_FORMATS (src/types/domain.ts) exactly.
+export const CALENDAR_FORMATS = ["MM/DD/YYYY", "DD/MM/YYYY", "YYYY-MM-DD", "DD.MM.YYYY", "DD-MM-YYYY", "YYYY/MM/DD"] as const;
 export type CalendarFormat = (typeof CALENDAR_FORMATS)[number];
 
 // Specificity used by resolve when target populations overlap (higher wins).
