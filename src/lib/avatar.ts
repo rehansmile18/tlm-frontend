@@ -18,7 +18,15 @@ export function validateImageFile(file: File): void {
   }
 }
 
+/**
+ * Fallback monogram for a user with no uploaded picture. Prefers true initials when the address
+ * separates names ("john.smith@" -> "JS") and falls back to the first two characters otherwise,
+ * so the common corporate address formats produce something recognisable rather than a truncated
+ * first name.
+ */
 export function initialsFromEmail(email: string): string {
-  const name = email.split("@")[0] ?? email;
-  return name.slice(0, 2).toUpperCase();
+  const local = email.split("@")[0] ?? "";
+  const parts = local.split(/[.\-_+]/).filter(Boolean);
+  if (parts.length >= 2) return (parts[0]![0]! + parts[1]![0]!).toUpperCase();
+  return local.slice(0, 2).toUpperCase() || "?";
 }

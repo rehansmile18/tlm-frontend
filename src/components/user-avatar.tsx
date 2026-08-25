@@ -8,11 +8,10 @@ export function UserAvatar({
   className?: string;
 }) {
   if (avatarUrl) {
-    return (
-      // eslint-disable-next-line @next/next/no-img-element -- a small inline base64 data URL, not
-      // a network-fetched image Next's optimizer/remote-domain config would apply to.
-      <img src={avatarUrl} alt="" className={`${className} shrink-0 rounded-full object-cover`} />
-    );
+    // A small inline base64 data URL, not a network-fetched image Next's optimizer/remote-domain
+    // config would apply to.
+    // eslint-disable-next-line @next/next/no-img-element
+    return <img src={avatarUrl} alt="" className={`${className} shrink-0 rounded-full object-cover`} />;
   }
   return (
     <span
