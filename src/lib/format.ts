@@ -1,37 +1,9 @@
-import { format, isValid, parseISO } from "date-fns";
-import type { AssignmentStatus, CalendarFormat, PolicyStatus, PolicyType, RuleGroupStatus, UserRole } from "./types";
+import type { AssignmentStatus, PolicyStatus, PolicyType, RuleGroupStatus, UserRole } from "./types";
+import type { BadgeTone } from "./format-core";
 
-// date-fns pattern for each per-client CalendarFormat setting (see useDateFormat/DateFormatProvider
-// in date-format.tsx, which is the format-aware entry point most UI should use instead of these).
-export const CALENDAR_FORMAT_PATTERNS: Record<CalendarFormat, string> = {
-  "MM/DD/YYYY": "MM/dd/yyyy",
-  "DD/MM/YYYY": "dd/MM/yyyy",
-  "YYYY-MM-DD": "yyyy-MM-dd",
-  "DD.MM.YYYY": "dd.MM.yyyy",
-  "DD-MM-YYYY": "dd-MM-yyyy",
-  "YYYY/MM/DD": "yyyy/MM/dd",
-};
-
-/** Locale-agnostic fallback (no client format available yet, e.g. before login resolves). */
-export function formatDate(iso?: string | null, pattern: string = "MM/dd/yyyy"): string {
-  if (!iso) return "—";
-  const d = parseISO(iso);
-  return isValid(d) ? format(d, pattern) : "—";
-}
-
-/** Locale-agnostic fallback (no client format available yet, e.g. before login resolves). */
-export function formatDateTime(iso?: string | null, pattern: string = "MM/dd/yyyy"): string {
-  if (!iso) return "—";
-  const d = parseISO(iso);
-  return isValid(d) ? format(d, `${pattern} · HH:mm`) : "—";
-}
-
-/** ISO string -> "yyyy-MM-dd" for <input type="date">. */
-export function toDateInput(iso?: string | null): string {
-  if (!iso) return "";
-  const d = parseISO(iso);
-  return isValid(d) ? format(d, "yyyy-MM-dd") : "";
-}
+// Everything generic lives in format-core.ts, which is byte-identical across both frontends (see
+// shared-files.json). This module adds only what is specific to the rule repository's domain.
+export * from "./format-core";
 
 export function humanizePolicyType(type: PolicyType): string {
   return type
@@ -46,9 +18,6 @@ export function humanizeRole(role: UserRole): string {
     .map((word) => word.charAt(0) + word.slice(1).toLowerCase())
     .join(" ");
 }
-
-// Maps a status to a shadcn Badge variant + tailwind accent, so status reads at a glance.
-export type BadgeTone = "neutral" | "info" | "success" | "warning" | "muted";
 
 export function policyStatusTone(status: PolicyStatus): BadgeTone {
   switch (status) {
@@ -93,14 +62,6 @@ export function assignmentStatusTone(status: AssignmentStatus): BadgeTone {
       return "neutral";
   }
 }
-
-export const TONE_CLASSES: Record<BadgeTone, string> = {
-  neutral: "border-transparent bg-secondary text-secondary-foreground",
-  info: "border-transparent bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300",
-  success: "border-transparent bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300",
-  warning: "border-transparent bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-300",
-  muted: "border-transparent bg-muted text-muted-foreground",
-};
 
 // US states + DC, for jurisdiction and assignment target pickers.
 export const US_STATES: { code: string; name: string }[] = [

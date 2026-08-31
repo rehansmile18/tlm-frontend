@@ -34,9 +34,11 @@ export type UserRole = (typeof USER_ROLES)[number];
 
 // Date DISPLAY format (day/month/year order), settable per-client (default) and per-user (own
 // override — see UserProfile.preferredDateFormat below). Calendar math stays Gregorian — this only
-// controls rendering. Mirrors TLM's own CALENDAR_FORMATS (src/types/domain.ts) exactly.
-export const CALENDAR_FORMATS = ["MM/DD/YYYY", "DD/MM/YYYY", "YYYY-MM-DD", "DD.MM.YYYY", "DD-MM-YYYY", "YYYY/MM/DD"] as const;
-export type CalendarFormat = (typeof CALENDAR_FORMATS)[number];
+// controls rendering. Defined in format-core.ts (shared with the sibling frontend) and re-exported
+// here so domain call sites keep importing it from one place.
+export { CALENDAR_FORMATS, TIME_FORMATS } from "./format-core";
+export type { CalendarFormat, TimeFormat } from "./format-core";
+import type { CalendarFormat, TimeFormat } from "./format-core";
 
 // Specificity used by resolve when target populations overlap (higher wins).
 export const TARGET_TYPE_SPECIFICITY: Record<AssignmentTargetType, number> = {
@@ -59,6 +61,7 @@ export interface AuthUser {
   clientId: string | null;
   preferredLanguage: PreferredLanguage | null;
   preferredDateFormat: CalendarFormat | null;
+  preferredTimeFormat: TimeFormat | null;
 }
 
 export interface LoginResponse {
@@ -75,6 +78,7 @@ export interface UserProfile {
   createdAt: string;
   preferredLanguage: PreferredLanguage | null;
   preferredDateFormat: CalendarFormat | null;
+  preferredTimeFormat: TimeFormat | null;
   // A base64 image data URL, or null for no photo. Deliberately kept out of AuthUser/login/
   // localStorage — it can be sizeable, and the profile query is the live source of truth instead.
   avatarUrl: string | null;
@@ -186,6 +190,7 @@ export interface Client {
   country: string | null;
   enabledStates: string[];
   calendarFormat: CalendarFormat;
+  timeFormat: TimeFormat;
   createdAt: string;
   moduleLabels: ModuleLabelOverrides | null;
 }

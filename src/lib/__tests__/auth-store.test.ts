@@ -8,6 +8,7 @@ const user = {
   clientId: "c1",
   preferredLanguage: null,
   preferredDateFormat: null,
+  preferredTimeFormat: null,
 };
 
 describe("auth-store", () => {

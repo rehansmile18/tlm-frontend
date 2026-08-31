@@ -9,6 +9,7 @@ const demoUser = {
   clientId: null,
   preferredLanguage: null,
   preferredDateFormat: null,
+  preferredTimeFormat: null,
 };
 
 describe("apiFetch", () => {
