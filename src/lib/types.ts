@@ -72,10 +72,14 @@ export interface LoginResponse {
 export interface UserProfile {
   _id: string;
   email: string;
+  username: string | null;
   role: UserRole;
   clientId: string | null;
   status: string;
   createdAt: string;
+  firstName: string | null;
+  lastName: string | null;
+  mobile: string | null;
   preferredLanguage: PreferredLanguage | null;
   preferredDateFormat: CalendarFormat | null;
   preferredTimeFormat: TimeFormat | null;

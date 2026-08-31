@@ -17,7 +17,7 @@ export default function LoginPage() {
   const { login, isAuthenticated, isReady } = useAuth();
   const { t } = useTranslation();
   const router = useRouter();
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -29,7 +29,7 @@ export default function LoginPage() {
     event.preventDefault();
     setSubmitting(true);
     try {
-      await login(email.trim(), password);
+      await login(identifier.trim(), password);
       toast.success(t("auth.signedIn"));
       router.replace("/dashboard");
     } catch (error) {
@@ -63,14 +63,14 @@ export default function LoginPage() {
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email">{t("auth.email")}</Label>
+                <Label htmlFor="identifier">{t("auth.identifier")}</Label>
                 <Input
-                  id="email"
-                  type="email"
+                  id="identifier"
+                  type="text"
                   autoComplete="username"
-                  placeholder="admin@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder={t("auth.identifierPlaceholder")}
+                  value={identifier}
+                  onChange={(e) => setIdentifier(e.target.value)}
                   required
                 />
               </div>

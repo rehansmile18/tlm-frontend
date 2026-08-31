@@ -22,7 +22,7 @@ import { useDateFormat } from "@/lib/date-format";
 import { LOCALES, useTranslation } from "@/lib/i18n/i18n";
 import { queryKeys } from "@/lib/query-keys";
 import { usersApi } from "@/lib/resources";
-import { CALENDAR_FORMATS, type CalendarFormat, type PreferredLanguage, type UserProfile } from "@/lib/types";
+import { CALENDAR_FORMATS, type CalendarFormat, type PreferredLanguage, type UserProfile, type TimeFormat, TIME_FORMATS } from "@/lib/types";
 
 export default function ProfilePage() {
   const { t } = useTranslation();
@@ -179,14 +179,26 @@ const NO_PREFERENCE = "";
 function PreferencesCard({ profile }: { profile: UserProfile }) {
   const { t, setLocale } = useTranslation();
   const queryClient = useQueryClient();
+  const [firstName, setFirstName] = useState<string>(profile.firstName ?? "");
+  const [lastName, setLastName] = useState<string>(profile.lastName ?? "");
+  const [username, setUsername] = useState<string>(profile.username ?? "");
+  const [mobile, setMobile] = useState<string>(profile.mobile ?? "");
   const [language, setLanguage] = useState<string>(profile.preferredLanguage ?? NO_PREFERENCE);
   const [dateFormat, setDateFormat] = useState<string>(profile.preferredDateFormat ?? NO_PREFERENCE);
+  const [timeFormat, setTimeFormat] = useState<string>(profile.preferredTimeFormat ?? NO_PREFERENCE);
 
   const mutation = useMutation({
     mutationFn: () =>
       usersApi.updateMe({
+        // Empty strings mean "cleared", which the API models as null — sending "" would store a
+        // blank value that then reads as set-but-empty everywhere downstream.
+        firstName: firstName.trim() || null,
+        lastName: lastName.trim() || null,
+        username: username.trim() || null,
+        mobile: mobile.trim() || null,
         preferredLanguage: (language || null) as PreferredLanguage | null,
         preferredDateFormat: (dateFormat || null) as CalendarFormat | null,
+        preferredTimeFormat: (timeFormat || null) as TimeFormat | null,
       }),
     onSuccess: (updated) => {
       queryClient.setQueryData(queryKeys.myProfile, updated);
@@ -212,6 +224,24 @@ function PreferencesCard({ profile }: { profile: UserProfile }) {
         </CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-1.5">
+            <Label htmlFor="firstName">{t("profile.firstName")}</Label>
+            <Input id="firstName" value={firstName} onChange={(e) => setFirstName(e.target.value)} />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="lastName">{t("profile.lastName")}</Label>
+            <Input id="lastName" value={lastName} onChange={(e) => setLastName(e.target.value)} />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="username">{t("profile.username")}</Label>
+            <Input id="username" value={username} onChange={(e) => setUsername(e.target.value)} />
+            <p className="text-xs text-muted-foreground">{t("profile.usernameHint")}</p>
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="mobile">{t("profile.mobile")}</Label>
+            <Input id="mobile" type="tel" value={mobile} onChange={(e) => setMobile(e.target.value)} />
+            <p className="text-xs text-muted-foreground">{t("profile.mobileHint")}</p>
+          </div>
+          <div className="space-y-1.5">
             <Label htmlFor="preferredLanguage">{t("profile.language")}</Label>
             <Combobox id="preferredLanguage" value={language} onValueChange={setLanguage}>
               <ComboboxItem value={NO_PREFERENCE}>{t("profile.languageNoPreference")}</ComboboxItem>
@@ -234,6 +264,18 @@ function PreferencesCard({ profile }: { profile: UserProfile }) {
               ))}
             </Combobox>
             <p className="text-xs text-muted-foreground">{t("profile.dateFormatHint")}</p>
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="preferredTimeFormat">{t("profile.timeFormat")}</Label>
+            <Combobox id="preferredTimeFormat" value={timeFormat} onValueChange={setTimeFormat}>
+              <ComboboxItem value={NO_PREFERENCE}>{t("profile.timeFormatNoPreference")}</ComboboxItem>
+              {TIME_FORMATS.map((format) => (
+                <ComboboxItem key={format} value={format}>
+                  {t(`profile.timeFormatOption.${format}`)}
+                </ComboboxItem>
+              ))}
+            </Combobox>
+            <p className="text-xs text-muted-foreground">{t("profile.timeFormatHint")}</p>
           </div>
         </CardContent>
         <CardFooter className="justify-end">

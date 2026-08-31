@@ -5,6 +5,7 @@ import type {
   AssignmentTargetType,
   AuditLog,
   CalendarFormat,
+  TimeFormat,
   Client,
   GeoCountry,
   GeoState,
@@ -193,8 +194,13 @@ export interface CreateUserBody {
 }
 
 export interface UpdateProfileBody {
+  firstName?: string | null;
+  lastName?: string | null;
+  username?: string | null;
+  mobile?: string | null;
   preferredLanguage?: PreferredLanguage | null;
   preferredDateFormat?: CalendarFormat | null;
+  preferredTimeFormat?: TimeFormat | null;
 }
 
 export interface ChangePasswordBody {
