@@ -14,6 +14,7 @@ import {
   ShieldCheckIcon,
   TargetIcon,
   UsersIcon,
+  WandSparklesIcon,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -31,6 +32,7 @@ interface NavItem {
 
 const NAV: NavItem[] = [
   { href: "/dashboard", labelKey: "nav.dashboard", icon: LayoutDashboardIcon },
+  { href: "/setup", labelKey: "nav.setup", icon: WandSparklesIcon, roles: ["CLIENT_ADMIN"] },
   { href: "/policies", labelKey: "nav.policies", icon: FileTextIcon },
   { href: "/rule-groups", labelKey: "nav.ruleGroups", icon: Layers3Icon },
   { href: "/assignments", labelKey: "nav.assignments", icon: TargetIcon },
