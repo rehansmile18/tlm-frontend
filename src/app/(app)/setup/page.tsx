@@ -120,10 +120,36 @@ export default function RulesSetupPage() {
 
   const blockerCount = [policiesState, ruleGroupState, assignmentState].filter((st) => st === "blocked").length;
 
-  // Revealed by "New setup", except when something is blocking — hiding unfinished work behind a
-  // button is the one case where an inventory-first landing would be worse than what it replaced.
-  const [stepsOpen, setStepsOpen] = useState(false);
-  const showSteps = stepsOpen || blockerCount > 0;
+  const liveCounts = { ruleSets: activeGroups.length, assignments: assignments.length };
+  type RunKey = keyof typeof liveCounts;
+
+  /**
+   * A setup RUN, not the client's overall state.
+   *
+   * Deriving step states from what the client already has was wrong: an org with rules in force
+   * saw every step marked done the moment they started a new setup, which is useless as a guide.
+   * A new setup is a new scenario — opening in another state, a different rule set for a new
+   * paygroup — so the steps describe what THIS run has added, measured against a snapshot taken
+   * when it started.
+   *
+   * The first step is excluded on purpose: "rules available" is an inventory of what exists to
+   * choose from, not something a run adds to. Authoring a policy is maker-checker and cannot be
+   * completed inside one sitting anyway.
+   */
+  const [run, setRun] = useState<{ baseline: Record<RunKey, number>; reused: RunKey[] } | null>(null);
+  const showSteps = run !== null || blockerCount > 0;
+
+  const addedIn = (key: RunKey) => (run ? Math.max(0, liveCounts[key] - run.baseline[key]) : 0);
+  const runState = (key: RunKey, fallback: StepState): StepState => {
+    if (!run) return fallback;
+    if (addedIn(key) > 0 || run.reused.includes(key)) return "done";
+    return "todo";
+  };
+  const markReused = (key: RunKey) =>
+    setRun((prev) => (prev ? { ...prev, reused: [...prev.reused, key] } : prev));
+  const runResolved = (["ruleSets", "assignments"] as RunKey[]).filter(
+    (k) => runState(k, "todo") === "done"
+  ).length;
 
   const loading = (isPlatformAdmin ? clientsQuery.isLoading : clientQuery.isLoading) || policiesQuery.isLoading;
 
@@ -172,23 +198,28 @@ export default function RulesSetupPage() {
             loading={policiesQuery.isLoading || ruleGroupsQuery.isLoading}
             blockerCount={blockerCount}
             stepsOpen={showSteps}
-            onNewSetup={() => setStepsOpen(true)}
+            onNewSetup={() => setRun({ baseline: { ...liveCounts }, reused: [] })}
           />
 
           {showSteps ? (
           <Card>
             <CardContent className="flex flex-wrap items-center gap-x-8 gap-y-3 py-4">
               <div>
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">{t("setup.progress")}</p>
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                  {t(run ? "setup.runProgress" : "setup.progress")}
+                </p>
                 <p className="text-2xl font-semibold tabular-nums">
-                  {readyCount}
-                  <span className="text-base font-normal text-muted-foreground"> / {COUNTED_STEPS}</span>
+                  {run ? runResolved : readyCount}
+                  <span className="text-base font-normal text-muted-foreground">
+                    {" / "}
+                    {run ? 2 : COUNTED_STEPS}
+                  </span>
                 </p>
               </div>
               <div className="h-1.5 min-w-40 flex-1 overflow-hidden rounded-full bg-muted">
                 <div
                   className="h-full rounded-full bg-primary transition-[width]"
-                  style={{ width: `${(readyCount / COUNTED_STEPS) * 100}%` }}
+                  style={{ width: `${((run ? runResolved / 2 : readyCount / COUNTED_STEPS)) * 100}%` }}
                 />
               </div>
               <div className="flex flex-wrap items-center gap-2">
@@ -227,21 +258,30 @@ export default function RulesSetupPage() {
             index={2}
             title={t("setup.ruleGroup.title")}
             description={t("setup.ruleGroup.description")}
-            state={ruleGroupState}
-            defaultOpen={ruleGroupState === "blocked"}
+            state={runState("ruleSets", ruleGroupState)}
+            defaultOpen={runState("ruleSets", ruleGroupState) !== "done"}
             summary={t("setup.ruleGroup.summary", {
               count: String(ruleGroups.filter((g) => g.status === "active").length),
             })}
           >
             <StepRuleGroup clientId={clientId} coverage={coverage} ruleGroups={ruleGroups} />
+            {run && addedIn("ruleSets") === 0 && !run.reused.includes("ruleSets") && liveCounts.ruleSets > 0 ? (
+              <button
+                type="button"
+                onClick={() => markReused("ruleSets")}
+                className="mt-3 text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+              >
+                {t("setup.useExisting")}
+              </button>
+            ) : null}
           </SetupStepCard>
 
           <SetupStepCard
             index={3}
             title={t("setup.assignments.title")}
             description={t("setup.assignments.description")}
-            state={assignmentState}
-            defaultOpen={assignmentState === "blocked"}
+            state={runState("assignments", assignmentState)}
+            defaultOpen={runState("assignments", assignmentState) !== "done"}
             summary={t("setup.assignments.summary", { count: String(assignments.length) })}
           >
             <StepAssignments
@@ -250,13 +290,22 @@ export default function RulesSetupPage() {
               assignments={assignments}
               enabledStates={enabledStates}
             />
+            {run && addedIn("assignments") === 0 && !run.reused.includes("assignments") && liveCounts.assignments > 0 ? (
+              <button
+                type="button"
+                onClick={() => markReused("assignments")}
+                className="mt-3 text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+              >
+                {t("setup.useExisting")}
+              </button>
+            ) : null}
           </SetupStepCard>
 
           <SetupStepCard
             index={4}
             title={t("setup.review.title")}
             description={t("setup.review.description")}
-            state={readyCount === COUNTED_STEPS ? "done" : "blocked"}
+            state={run ? (runResolved === 2 ? "done" : "todo") : readyCount === COUNTED_STEPS ? "done" : "blocked"}
             defaultOpen
           >
             <StepReview
@@ -266,6 +315,15 @@ export default function RulesSetupPage() {
               assignmentCount={assignments.length}
               enabledStates={enabledStates}
             />
+            {run && addedIn("assignments") === 0 && !run.reused.includes("assignments") && liveCounts.assignments > 0 ? (
+              <button
+                type="button"
+                onClick={() => markReused("assignments")}
+                className="mt-3 text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+              >
+                {t("setup.useExisting")}
+              </button>
+            ) : null}
           </SetupStepCard>
             </>
           ) : null}

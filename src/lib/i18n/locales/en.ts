@@ -85,6 +85,8 @@ const en = {
     title: "Guided rule setup",
     description: "Get your organization's pay rules in place, in order, and confirm they actually resolve.",
     progress: "Steps ready",
+    runProgress: "This setup",
+    useExisting: "Use what's already set up",
     inventory: {
       rulesAvailable: "Rules available",
       ruleSets: "Rule sets",

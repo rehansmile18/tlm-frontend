@@ -85,6 +85,8 @@ const ar: TranslationKeys = {
     title: "الإعداد الموجّه للقواعد",
     description: "جهّز قواعد الأجور لمؤسستك بالترتيب، وتأكد من أنها تُحلّ فعلياً.",
     progress: "الخطوات الجاهزة",
+    runProgress: "هذا الإعداد",
+    useExisting: "استخدام ما تم إعداده بالفعل",
     inventory: {
       rulesAvailable: "القواعد المتاحة",
       ruleSets: "مجموعات القواعد",

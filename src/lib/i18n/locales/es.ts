@@ -85,6 +85,8 @@ const es: TranslationKeys = {
     title: "Configuración guiada de reglas",
     description: "Ponga en marcha las reglas de pago de su organización, en orden, y confirme que se resuelven.",
     progress: "Pasos listos",
+    runProgress: "Esta configuración",
+    useExisting: "Usar lo ya configurado",
     inventory: {
       rulesAvailable: "Reglas disponibles",
       ruleSets: "Conjuntos de reglas",
