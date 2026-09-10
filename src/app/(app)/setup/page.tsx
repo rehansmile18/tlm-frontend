@@ -10,6 +10,7 @@ import { PageHeader } from "@/components/page-header";
 import { ErrorState } from "@/components/data-state";
 import { StatusBadge } from "@/components/status-badge";
 import { SetupStepCard, type StepState } from "@/components/setup/setup-step-card";
+import { SetupInventory, type InventoryRow } from "@/components/setup/setup-inventory";
 import { StepPolicies } from "@/components/setup/step-policies";
 import { StepRuleGroup } from "@/components/setup/step-rule-group";
 import { StepAssignments } from "@/components/setup/step-assignments";
@@ -90,6 +91,40 @@ export default function RulesSetupPage() {
   const assignmentState: StepState = assignments.length > 0 ? "done" : "blocked";
   const readyCount = [policiesState, ruleGroupState, assignmentState].filter((s) => s !== "blocked").length;
 
+  const publishedCount = coverage.types.reduce((n, tc) => n + tc.available.length, 0);
+  const activeGroups = ruleGroups.filter((g) => g.status === "active");
+
+  const inventory: InventoryRow[] = [
+    {
+      label: t("setup.inventory.rulesAvailable"),
+      count: publishedCount,
+      examples: coverage.types.flatMap((tc) => tc.available.map((pol) => pol.name)),
+      href: "/policies",
+      required: true,
+    },
+    {
+      label: t("setup.inventory.ruleSets"),
+      count: activeGroups.length,
+      examples: activeGroups.map((g) => g.name),
+      href: "/rule-groups",
+      required: true,
+    },
+    {
+      label: t("setup.assignments.title"),
+      count: assignments.length,
+      examples: assignments.map((a) => `${a.targetType}: ${a.targetIds.join(", ")}`),
+      href: "/assignments",
+      required: true,
+    },
+  ];
+
+  const blockerCount = [policiesState, ruleGroupState, assignmentState].filter((st) => st === "blocked").length;
+
+  // Revealed by "New setup", except when something is blocking — hiding unfinished work behind a
+  // button is the one case where an inventory-first landing would be worse than what it replaced.
+  const [stepsOpen, setStepsOpen] = useState(false);
+  const showSteps = stepsOpen || blockerCount > 0;
+
   const loading = (isPlatformAdmin ? clientsQuery.isLoading : clientQuery.isLoading) || policiesQuery.isLoading;
 
   return (
@@ -132,6 +167,15 @@ export default function RulesSetupPage() {
         </Card>
       ) : (
         <div className="space-y-3">
+          <SetupInventory
+            rows={inventory}
+            loading={policiesQuery.isLoading || ruleGroupsQuery.isLoading}
+            blockerCount={blockerCount}
+            stepsOpen={showSteps}
+            onNewSetup={() => setStepsOpen(true)}
+          />
+
+          {showSteps ? (
           <Card>
             <CardContent className="flex flex-wrap items-center gap-x-8 gap-y-3 py-4">
               <div>
@@ -161,7 +205,10 @@ export default function RulesSetupPage() {
               </div>
             </CardContent>
           </Card>
+          ) : null}
 
+          {showSteps ? (
+            <>
           <SetupStepCard
             index={1}
             title={t("setup.policies.title")}
@@ -220,6 +267,8 @@ export default function RulesSetupPage() {
               enabledStates={enabledStates}
             />
           </SetupStepCard>
+            </>
+          ) : null}
         </div>
       )}
     </>
