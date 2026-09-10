@@ -1,8 +1,10 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
+import { Combobox, ComboboxItem } from "@/components/ui/combobox";
+import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PageHeader } from "@/components/page-header";
 import { ErrorState } from "@/components/data-state";
@@ -15,7 +17,8 @@ import { StepReview } from "@/components/setup/step-review";
 import { buildCoverage } from "@/lib/rule-coverage";
 import { assignmentsApi, clientsApi, policiesApi, ruleGroupsApi } from "@/lib/resources";
 import { queryKeys } from "@/lib/query-keys";
-import { useAuth } from "@/lib/auth";
+import { useRole } from "@/lib/auth";
+import { useClients } from "@/lib/hooks";
 import { useTranslation } from "@/lib/i18n/i18n";
 
 const COUNTED_STEPS = 3;
@@ -23,17 +26,29 @@ const COUNTED_STEPS = 3;
 /**
  * Guided rule setup for one client.
  *
- * Scoped to the signed-in user's own client on purpose. A PLATFORM_ADMIN spans every client and
- * has no single "my client" context, so rather than invent a picker for a page whose whole subject
- * is one org's rules, they are pointed at the client list instead.
+ * A CLIENT_ADMIN gets their own client with no choice to make. A PLATFORM_ADMIN has no single "my
+ * client", so they pick one — the same answer the operations app's setup already gave, and the
+ * reason this originally turned them away was a worse one: onboarding and support are exactly
+ * when someone spanning every client needs this page, and hiding it from them meant the whole
+ * feature was invisible to the account most likely to be driving a new client's setup.
  */
 export default function RulesSetupPage() {
   const { t } = useTranslation();
-  const { user } = useAuth();
+  const { isPlatformAdmin, clientId: ownClientId } = useRole();
 
-  const clientQuery = useQuery({ queryKey: queryKeys.myClient, queryFn: () => clientsApi.getMine() });
-  const client = clientQuery.data?.client ?? null;
-  const clientId = client?._id ?? "";
+  // Own client for a client admin; a chosen one for a platform admin.
+  const clientQuery = useQuery({
+    queryKey: queryKeys.myClient,
+    queryFn: () => clientsApi.getMine(),
+    enabled: !isPlatformAdmin,
+  });
+  const clientsQuery = useClients();
+  const [pickedClientId, setPickedClientId] = useState("");
+
+  const client = isPlatformAdmin
+    ? (clientsQuery.data?.items ?? []).find((c) => c._id === pickedClientId) ?? null
+    : clientQuery.data?.client ?? null;
+  const clientId = client?._id ?? (isPlatformAdmin ? pickedClientId : ownClientId ?? "");
 
   // Scoped to the caller's own client server-side; global templates come back alongside their own
   // policies, which is what makes a client admin able to assemble a rule set at all.
@@ -75,11 +90,31 @@ export default function RulesSetupPage() {
   const assignmentState: StepState = assignments.length > 0 ? "done" : "blocked";
   const readyCount = [policiesState, ruleGroupState, assignmentState].filter((s) => s !== "blocked").length;
 
-  const loading = clientQuery.isLoading || policiesQuery.isLoading;
+  const loading = (isPlatformAdmin ? clientsQuery.isLoading : clientQuery.isLoading) || policiesQuery.isLoading;
 
   return (
     <>
       <PageHeader title={t("setup.title")} description={t("setup.description")} />
+
+      {isPlatformAdmin ? (
+        <Card>
+          <CardContent className="space-y-1.5 pt-6">
+            <Label htmlFor="setup-client">{t("setup.chooseClient")}</Label>
+            <Combobox
+              id="setup-client"
+              value={pickedClientId}
+              onValueChange={setPickedClientId}
+              placeholder={t("setup.chooseClientPlaceholder")}
+            >
+              {(clientsQuery.data?.items ?? []).map((c) => (
+                <ComboboxItem key={c._id} value={c._id}>
+                  {c.name}
+                </ComboboxItem>
+              ))}
+            </Combobox>
+          </CardContent>
+        </Card>
+      ) : null}
 
       {clientQuery.isError ? (
         <ErrorState error={clientQuery.error} onRetry={() => clientQuery.refetch()} />
@@ -92,7 +127,7 @@ export default function RulesSetupPage() {
       ) : !client ? (
         <Card>
           <CardContent className="py-8 text-center text-sm text-muted-foreground">
-            {user?.role === "PLATFORM_ADMIN" ? t("setup.platformAdminNote") : t("setup.noClient")}
+            {isPlatformAdmin ? t("setup.chooseClientFirst") : t("setup.noClient")}
           </CardContent>
         </Card>
       ) : (

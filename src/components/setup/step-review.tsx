@@ -13,7 +13,6 @@ import { humanizePolicyType } from "@/lib/format";
 import { assignmentsApi } from "@/lib/resources";
 import type { Policy } from "@/lib/types";
 import type { CoverageReport } from "@/lib/rule-coverage";
-import { useAuth } from "@/lib/auth";
 import { useTranslation } from "@/lib/i18n/i18n";
 
 /**
@@ -42,7 +41,6 @@ export function StepReview({
   enabledStates: string[];
 }) {
   const { t } = useTranslation();
-  const { user } = useAuth();
 
   const [employeeId, setEmployeeId] = useState("");
   const [state, setState] = useState(enabledStates[0] ?? "");
@@ -193,9 +191,6 @@ export function StepReview({
         ) : null}
       </div>
 
-      {user?.role === "PLATFORM_ADMIN" ? null : (
-        <p className="text-xs text-muted-foreground">{t("setup.review.scopeNote")}</p>
-      )}
     </div>
   );
 }
